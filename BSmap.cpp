@@ -1,4 +1,5 @@
 #include <iostream>
+using namespace std;
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -9,11 +10,7 @@
 #include <sys/types.h>
 #include "BSmap.h"
 
-int encode(char *request);
-int decode(char *trame);
-char checkSum();
-char strWrite[100];
-int sizeWrite;
+
 
 int main(int argv, char **argc)
 {
@@ -21,6 +18,7 @@ int main(int argv, char **argc)
 	int fd,i;
 	char input;
 	char commande[50];
+	string s1;
 	const char * fiforead = "/tmp/RobBSmap"; // du robot vers l'outil
 	const char * fifowrite = "/tmp/BSmapRob"; // de l'outil vers le robot
 	// création des fifo, au cas où elles n'existeraient pas
@@ -38,8 +36,10 @@ int main(int argv, char **argc)
 	{
 		do 
 		{
-			scanf("%s",commande);
-			printf("aon a reçu %s\n",commande);
+			getline(std::cin, s1); // pour récupérer même les espaces
+			memcpy(commande,s1.c_str(),s1.size());
+			commande[s1.size()] = '\0';
+			printf("on a reçu %s de la taille %d\n",commande, s1.size());
 		}
 		while(encode(commande)!=0);
 		fd=open(fifowrite,O_WRONLY);
@@ -57,11 +57,13 @@ int main(int argv, char **argc)
 		{
 			printf("Reçu par le lecteur :\n");
 			// traitement
+			sizeRead=0;
 			while(read(fd,&input,1)>0)
 			{
-				
-				printf("%c",input);
+				strRead[sizeRead++]=input;
+				//printf("%c",input);
 			}
+			decode(strRead,sizeRead);
 			printf("La lecture se termine!\n");
 		}
 		else
@@ -74,19 +76,22 @@ int main(int argv, char **argc)
 }
 // types de commande, pour l'instant
 // p ou P : demande de trame position
-// c ou C : consigne de cible
+// t ou T : consigne de cible (target), TP pour polaire, TR pour rotation
 // a ou A : consigne d'actionneur
-// t ou T : test, on attend un ack simple
+// s ou S : test, on attend un ack simple
 int encode(char *request)
 {
+	char tmpchar[3];
+	int val1, val2;
+	short vals1, vals2;
 	printf("Encodage de : %s\n",request);
 	switch (request[0]) // reçu depuis l'interface
 	{
 		default :
 			printf("C'est quoi ça??\n");
 			return (-1);
-		case 't':
-		case 'T':
+		case 's':
+		case 'S':
 			strcpy(strWrite,"coucou");
 			sizeWrite = 6;
 			break;
@@ -99,7 +104,68 @@ int encode(char *request)
 			strWrite[3] = ID_POSITION;
 			strWrite[4] = checkSum();
 			break;
+		case 't':
+		case 'T':
+			strWrite[0] = ID_ORDER;
+			strWrite[2] = VersionRobot;
+			if (request[1] == 'P' || request[1] == 'p') // polar
+			{
+				//strcpy(request,"TP 36 32");
+				sscanf(request,"%s %d %d",tmpchar, &val1, &val2);
+				printf("demande de polar vers (%d : %d)\n",val1, val2);
+				vals1 = (short)val1;vals2=(short)val2;
+				strWrite[3] = 'P'; //polar
+				strWrite[4] = (char) ((int)vals1 & 0x00FF);
+				strWrite[5] = (char) (((int)vals1)>>8 & 0x00FF);
+				strWrite[6] = (char) ((int)vals2 & 0x00FF);
+				strWrite[7] = (char) (((int)vals2)>>8 & 0x00FF);
+				strWrite[8] = 0; //angle
+				strWrite[9] = 0; //angle
+				strWrite[10] = checkSum();
+				strWrite[1] = 7;
+				sizeWrite = 11;
+			}
+			if (request[1] == 'R' || request[1] == 'r') // rotation
+			{
+				//strcpy(request,"TP 36 32");
+				sscanf(request,"%s %d",tmpchar, &val1);
+				printf("demande de rotation vers un angle de %d° \n",val1);
+				vals1 = (short)val1;
+				strWrite[3] = 'R'; //polar
+				strWrite[4] = 0; //X
+				strWrite[5] = 0; //X
+				strWrite[6] = 0; //Y
+				strWrite[7] = 0; //Y
+				strWrite[8] = (char) ((int)vals1 & 0x00FF);
+				strWrite[9] = (char) (((int)vals1)>>8 & 0x00FF);
+				strWrite[10] = checkSum();
+				strWrite[1] = 7;
+				sizeWrite = 11;
+			}
+			break;
 		// les autres sont à faire
+	}
+	return 0;
+}
+int decode(char *trame,int t)
+{
+	printf("début du décodage de");
+	for (int j=0;j<sizeRead;j++)
+		printf("%d ",trame[j]);
+	printf("\n");
+	switch (trame[0]) //l'identifiant
+	{
+		case ID_POSITION :
+			//printf("demande de position t= %d\n",t);
+			if (t < 13) // on n'a pas toute la trame
+				return -1;
+			// on va vérifier la version du robot, la longueur...
+			//puis les data
+			curPos.posX = (signed short)(trame[3])+((int)(trame[4]) << 8);
+			curPos.posY = (signed short)(trame[5])+((int)(trame[6]) << 8);
+			curPos.posAlpha = (signed short)(trame[7])+((int)(trame[8]) << 8);
+			printf("la position est %d %d %d\n",curPos.posX, curPos.posY, curPos.posAlpha);
+			break;
 	}
 	return 0;
 }
@@ -111,47 +177,4 @@ char checkSum()
 		cs+=(int)strWrite[i];
 	return (char)cs;
 }
-// fonction de décodage octet par octet de la trame reçue. Pour l'instant on écrit
-/*int decodeByte(char b)
-{
-	printf("%c",b);
-	return 0;
-}
 
-int Remote::encodeFrame(char id)
-{
-	// l'identifiant est la question
-	// si c'est un ordre, on va répondre OK avec le numéro de l'ordre
-	// si c'est un requete de trame, on renvoie la trame
-	float val1, val2, val3;
-	switch (id)
-	{
-		case ID_ACK :
-			strWrite[0] = ID_ACK; // identifiant
-			strWrite[1] = 2;// taille utile hors version
-			strWrite[2] = Rob.getVersion();
-			strWrite[3] = strRead[3]; // l'odre donné
-			
-			strWrite[4] = ACK_OK; // pour l'instant tout est OK
-			sizeWrite = 5;
-			break;
-		case ID_POSITION :
-			strWrite[0] = ID_POSITION;
-			strWrite[1] = 10;// taille utile
-			strWrite[2] = Rob.getVersion();
-			Pos.getPosition(&val1,&val2,&val3);
-			strWrite[3] = (char) ((int)val1 & 0x00FF); // pos X poids faible
-			strWrite[4] = (char) (((int)val1)>>8 & 0x00FF); // pos X poids fort
-			strWrite[5] = (char) ((int)val2 & 0x00FF); // pos Y poids faible
-			strWrite[6] = (char) (((int)val2)>>8 & 0x00FF); // pos Y poids fort
-			strWrite[7] = (char) ((int)val3 & 0x00FF); // pos A poids faible
-			strWrite[8] = (char) (((int)val3)>>8 & 0x00FF); // pos A poids fort
-			// ...
-			sizeWrite = 13;
-			break;
-		default :
-			break;
-	}
-	return 0;
-	
-}*/

@@ -17,5 +17,22 @@
 #define ACK_BAD_VERSION 1
 #define ACK_IMPOSSIBLE 2
 
+struct s_Position{
+	short posX;
+	short posY;
+	short posAlpha;
+	short spdFor;
+	short spdRot;
+};
+
+struct s_Position curPos;
+int encode(char *request);
+int decode(char *trame,int t);
+char checkSum();
+char strWrite[100];
+char strRead[50];
+int sizeWrite;
+int sizeRead;
+
 char VersionRobot=17; // 0x01 = 2021 + 0x10=  principal
 #endif

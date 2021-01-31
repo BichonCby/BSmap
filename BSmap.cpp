@@ -175,6 +175,7 @@ int decode(char *trame,int t)
 	}
 	return 0;
 }
+
 // calcule le checksum, à savoir la somme de tous les octets, casté en char
 char checkSum()
 {

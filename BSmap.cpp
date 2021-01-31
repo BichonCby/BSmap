@@ -28,9 +28,8 @@ int main(int argv, char **argc)
 		//return;
 	}
 	printf("pipe OK\n");
-	// on va lire et attendre de recevoir quelque chose
-	// début de la machine à état pour la com remote
-	// pour l'instant on boucle en lecture écriture
+	// pour l'instant on est en ligne de commande. On demande donc
+	// une trame ou on donne un ordre par l'entrée strandard
 	i=0;
 	while(1)
 	{
@@ -39,9 +38,11 @@ int main(int argv, char **argc)
 			getline(std::cin, s1); // pour récupérer même les espaces
 			memcpy(commande,s1.c_str(),s1.size());
 			commande[s1.size()] = '\0';
-			printf("on a reçu %s de la taille %d\n",commande, s1.size());
+			//printf("on a reçu %s de la taille %d\n",commande, s1.size());
 		}
+		// encodage de la ligne reçue
 		while(encode(commande)!=0);
+		// puis écriture dans le pipe
 		fd=open(fifowrite,O_WRONLY);
 		if (fd != -1)
 		{
@@ -51,7 +52,8 @@ int main(int argv, char **argc)
 			printf("pipe HS\n");
 		close (fd);
 		//printf("Ecriture faite\n");
-		//on va lire la réponse
+		
+		//on va lire la réponse dans l'autre pipe
 		fd=open(fiforead,O_RDONLY);
 		if (fd != -1) // la lecture s'est bien passée
 		{
@@ -76,9 +78,13 @@ int main(int argv, char **argc)
 }
 // types de commande, pour l'instant
 // p ou P : demande de trame position
+// r ou R : demande de trame robot
+// v ou V : demande de trame asservissement
+// a ou A : demande de trame actionneurs
+// s ou s : demande de trame sensors
 // t ou T : consigne de cible (target), TP pour polaire, TR pour rotation
-// a ou A : consigne d'actionneur
-// s ou S : test, on attend un ack simple
+// d ou D : consigne d'actionneur
+// x ou X : test, on attend un ack simple
 int encode(char *request)
 {
 	char tmpchar[3];

@@ -3,4 +3,4 @@
 
 git add *
 git commit -m "maj auto"
-git commit
+git push

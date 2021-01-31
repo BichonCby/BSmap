@@ -40,10 +40,13 @@ id est l'identifiant de la trame demandée
 
 demande de trame (5 octets)
 > ID_INFO 1 Ver id CS
+
 ordre de déplacement polaire
 > ID_ORDER Ver P pfX pFX pfY pFY 0 0 CS
+
 ordre de déplacement rotation
 > ID_ORDER Ver R 0 0 0 0 pfA pFA CS
+
 ordre d'actionneur (spécifique à chaque actionneur, on positionne 2 octets de base)
 > ID_ORDER Ver A nact val1 val2
 
@@ -53,5 +56,6 @@ nu est le nombre d'octets utiles (hors id,version et CS)
 
 Position (14 octets)
 > ID_POSITION 10 Ver pfX pFX pfY pFY pfA PFA pfVf pFVf pfVr pFVr CS 
+
 Robot (8 octets)
 > ID_ROBOT 4 Ver color score count state CS

@@ -8,9 +8,15 @@
 // les identifiants de trame
 #define ID_INFO 0x01
 #define ID_ORDER 0x02
-#define ID_ACK 0x03
+#define ID_ACK 0x90
 #define ID_POSITION 0x10
 #define ID_ASSERV 0x11
+#define ID_ROBOT 0x12
+#define ID_ACTION 0x13
+#define ID_DETECT 0x14
+#define ID_IA 0x15
+#define ID_SENSORS 0x16
+#define ID_MOTORS 0x17
 
 // les réponses de la trame Ack
 #define ACK_OK 0
@@ -24,8 +30,33 @@ struct s_Position{
 	short spdFor;
 	short spdRot;
 };
+struct s_Asserv{
+	char type;
+	short tarX;
+	short tarY;
+	short tarAlpha;
+	short spdFor;
+	short spdRot;
+	char conv;
+	char block;
+};
+struct s_Robot{
+	char state;
+	char color;
+	char count;
+	char type;
+	uint8_t score;
+};
+struct s_Action{
+	char state1;
+	char state2;
+};
 
 struct s_Position curPos;
+struct s_Asserv curAss;
+struct s_Robot curRob;
+struct s_Action curAct;
+
 int encode(char *request);
 int decode(char *trame,int t);
 char checkSum();

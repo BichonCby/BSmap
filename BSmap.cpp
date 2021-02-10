@@ -71,7 +71,7 @@ int main(int argv, char **argc)
 		else
 			printf("pipe HS\n"); // oups!
 		close (fd);
-		usleep(5000000);
+		usleep(500000);
 	}
 	return 0;
 
@@ -96,10 +96,18 @@ int encode(char *request)
 		default :
 			printf("C'est quoi ça??\n");
 			return (-1);
-		case 's':
-		case 'S':
-			strcpy(strWrite,"coucou");
-			sizeWrite = 6;
+		case 'h':
+		case 'H':
+			printf("P : demande trame Position\n");
+			printf("V : demande trame Asservissement\n");
+			printf("R : demande trame Robot\n"); 
+			printf("A : demande trame Actionneur\n");
+			printf("S : demande trame Sensors\n");
+			printf("TP valx valy : cible avant\n");
+			printf("TI valx valy : cible arrière\n");
+			printf("TR angle : cible en rotation\n");
+			printf("MV vitDroite vitGauche : mode manuel en vitesse\n");
+			printf("H : help\n");
 			break;
 		case 'p':
 		case 'P': // demande de position
@@ -108,6 +116,42 @@ int encode(char *request)
 			strWrite[1] = 1;
 			strWrite[2] = VersionRobot;
 			strWrite[3] = ID_POSITION;
+			strWrite[4] = checkSum();
+			break;
+		case 'v':
+		case 'V': // demande d'asservissement
+			sizeWrite = 5;
+			strWrite[0] = ID_INFO;
+			strWrite[1] = 1;
+			strWrite[2] = VersionRobot;
+			strWrite[3] = ID_ASSERV;
+			strWrite[4] = checkSum();
+			break;
+		case 'r':
+		case 'R':
+			sizeWrite = 5;
+			strWrite[0] = ID_INFO;
+			strWrite[1] = 1;
+			strWrite[2] = VersionRobot;
+			strWrite[3] = ID_ROBOT;
+			strWrite[4] = checkSum();
+			break;
+		case 'a':
+		case 'A':
+			sizeWrite = 5;
+			strWrite[0] = ID_INFO;
+			strWrite[1] = 1;
+			strWrite[2] = VersionRobot;
+			strWrite[3] = ID_ACTION;
+			strWrite[4] = checkSum();
+			break;
+		case 's':
+		case 'S':
+			sizeWrite = 5;
+			strWrite[0] = ID_INFO;
+			strWrite[1] = 1;
+			strWrite[2] = VersionRobot;
+			strWrite[3] = ID_SENSORS;
 			strWrite[4] = checkSum();
 			break;
 		case 't':
@@ -131,6 +175,21 @@ int encode(char *request)
 				strWrite[1] = 7;
 				sizeWrite = 11;
 			}
+			if (request[1] == 'M' || request[1] == 'm') // manual speed
+			{
+				//strcpy(request,"TP 36 32");
+				sscanf(request,"%s %d %d",tmpchar, &val1, &val2);
+				printf("demande de manual (d= %d : d= %d)\n",val1, val2);
+				vals1 = (short)val1;vals2=(short)val2;
+				strWrite[3] = 'M'; //polar
+				strWrite[4] = (char) ((int)vals1 & 0x00FF);
+				strWrite[5] = (char) (((int)vals1)>>8 & 0x00FF);
+				strWrite[6] = (char) ((int)vals2 & 0x00FF);
+				strWrite[7] = (char) (((int)vals2)>>8 & 0x00FF);
+				strWrite[8] = checkSum();
+				strWrite[1] = 5;
+				sizeWrite = 9;
+			}
 			if (request[1] == 'R' || request[1] == 'r') // rotation
 			{
 				//strcpy(request,"TP 36 32");
@@ -138,15 +197,11 @@ int encode(char *request)
 				printf("demande de rotation vers un angle de %d° \n",val1);
 				vals1 = (short)val1;
 				strWrite[3] = 'R'; //polar
-				strWrite[4] = 0; //X
-				strWrite[5] = 0; //X
-				strWrite[6] = 0; //Y
-				strWrite[7] = 0; //Y
-				strWrite[8] = (char) ((int)vals1 & 0x00FF);
-				strWrite[9] = (char) (((int)vals1)>>8 & 0x00FF);
-				strWrite[10] = checkSum();
-				strWrite[1] = 7;
-				sizeWrite = 11;
+				strWrite[4] = (char) ((int)vals1 & 0x00FF);
+				strWrite[5] = (char) (((int)vals1)>>8 & 0x00FF);
+				strWrite[6] = checkSum();
+				strWrite[1] = 3;
+				sizeWrite = 7;
 			}
 			break;
 		// les autres sont à faire
@@ -155,9 +210,9 @@ int encode(char *request)
 }
 int decode(char *trame,int t)
 {
-	printf("début du décodage de");
+	printf("début du décodage de ");
 	for (int j=0;j<sizeRead;j++)
-		printf("%d ",trame[j]);
+		printf("%x ",trame[j]);
 	printf("\n");
 	switch (trame[0]) //l'identifiant
 	{
@@ -170,7 +225,53 @@ int decode(char *trame,int t)
 			curPos.posX = (signed short)(trame[3])+((int)(trame[4]) << 8);
 			curPos.posY = (signed short)(trame[5])+((int)(trame[6]) << 8);
 			curPos.posAlpha = (signed short)(trame[7])+((int)(trame[8]) << 8);
+			curPos.spdFor = (signed short)(trame[9])+((int)(trame[10]) << 8);
+			curPos.spdRot = (signed short)(trame[11])+((int)(trame[12]) << 8);
 			printf("la position est %d %d %d\n",curPos.posX, curPos.posY, curPos.posAlpha);
+			break; 
+		case ID_ASSERV :
+			if (t < 13) // on n'a pas toute la trame
+				return -1;
+			// on va vérifier la version du robot, la longueur...
+			//puis les data
+			curAss.type = trame[3];
+			curAss.tarX = (signed short)(trame[4])+((int)(trame[5]) << 8);
+			curAss.tarY = (signed short)(trame[6])+((int)(trame[7]) << 8);
+			curAss.tarAlpha = (signed short)(trame[8])+((int)(trame[9]) << 8);
+			curAss.spdFor = (signed short)(trame[10])+((int)(trame[11]) << 8);
+			curAss.spdRot = (signed short)(trame[12])+((int)(trame[13]) << 8);
+			curAss.conv = trame[14];
+			curAss.block = trame[15];
+			printf("type : %d converge = %d\n",curAss.type,curAss.conv);
+			printf("la cible est %d %d %d\n",curAss.tarX, curAss.tarY, curAss.tarAlpha);
+			printf("les vitesses for %d et rot %d\n",curAss.spdFor, curAss.spdRot);
+			break;
+		case ID_ROBOT :
+			if (t < 8) // on n'a pas toute la trame
+				return -1;
+			// on va vérifier la version du robot, la longueur...
+			//puis les data
+			curRob.state = trame[3];
+			curRob.color = trame[4];
+			curRob.count = trame[5];
+			curRob.type = trame[6];
+			curRob.score = (uint8_t) (trame[7]);
+			printf("count : %d score = %d\n",curRob.count,curRob.score);
+			break;
+		case ID_ACTION :
+			if (t < 5) // on n'a pas toute la trame
+				return -1;
+			// on va vérifier la version du robot, la longueur...
+			//puis les data
+			curAct.state1 = trame[3];
+			curAct.state2 = trame[4];
+			//printf("count : %d score = %d\n",curRob.count,curRob.score);
+			break;
+		case ID_ACK:
+			printf("Ack reçu\n");
+			break;
+		default :
+			printf("trame inconnue %d\n",trame[0]);
 			break;
 	}
 	return 0;

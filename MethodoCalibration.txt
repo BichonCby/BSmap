@@ -1,0 +1,37 @@
+Position / vitesse :
+
+Soit un robot avec comme caractéristiques :
+Rayon roue motrice Rm
+Rayon roue codeuse Rc
+Distance entre les roues motrices Dm
+Distance entre les roues codeuses Dc
+Nombre de pas par tour de la roue motrice Nm
+Nombre de pas par tour de la roue codeuse Nc
+les roues codeuses et motrices sont dans un même axe.
+
+si on avance de p pas sur chaque roue codeuse, dans le même sens, le robot avance de :
+2pi*Rc*p/Nc = (2p)*pi*Rc/Nc. Donc COEFF_MM = pi*Rc/Nc
+
+si on avance de p pas sur chaque roue codeuse, dans le sens inverse, le robot roule de :
+l = 2*2*pi*Rc*p/Nc. Les roues codeuses ont donc effectué un arc de :
+a(rad) = l/(Dc/2)
+a(°) = (2*l/Dc)*(180/pi)=360*l/(pi*Dc)
+a(°) = 360*(2p)*2*pi*Rc/(Dc*Nc*pi) = (2p)*720*Rc/(Dc*Nc)
+donc COEFF_ANG = 720*Rc/(Dc*Nc) 
+
+La vitesse réelle mesurée au codeur si on avance droit est de :
+v=2pi*Rc*p/Nc/0.02 = (2p)*pi*Rc/Nc/0.02 = (2p)*50*COEFF_MM.
+Donc COEFF_SPD_FOR = 50*COEFF_MM
+
+De la même manière, la vitesse de rotation est de 
+Vr = a(°)*50 donc COEFF_SPD_ROT = 50*COEFF_ANG
+
+Consignes de vitesse :
+les consignes de vitesses virtuelles d'avance et de rotation doivent être dans les bonnes unités. Le pilotage des moteurs sera en dps roue
+
+Si la vitesse virtuelle d'avance est Vv, alors la vitesse moteur sera :
+Vv = Vr(rad/s)*Rm = Vr(dps)*pi*Rm/180
+donc Vr(dps) = Vv*180/(pi*Rm) donc MMSROB_TO_DPSWHL = 180/(pi*Rm)
+
+
+si on demande une vitesse, on ne l'obtient pas du fait des arrondis.

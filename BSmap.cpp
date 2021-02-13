@@ -103,10 +103,11 @@ int encode(char *request)
 			printf("R : demande trame Robot\n"); 
 			printf("A : demande trame Actionneur\n");
 			printf("S : demande trame Sensors\n");
+			printf("M : demande de trame motors\n");
 			printf("TP valx valy : cible avant\n");
 			printf("TI valx valy : cible arrière\n");
 			printf("TR angle : cible en rotation\n");
-			printf("MV vitDroite vitGauche : mode manuel en vitesse\n");
+			printf("TM vitDroite vitGauche : mode manuel en vitesse\n");
 			printf("H : help\n");
 			break;
 		case 'p':
@@ -154,6 +155,15 @@ int encode(char *request)
 			strWrite[3] = ID_SENSORS;
 			strWrite[4] = checkSum();
 			break;
+		case 'm':
+		case 'M': // demande de motors
+			sizeWrite = 5;
+			strWrite[0] = ID_INFO;
+			strWrite[1] = 1;
+			strWrite[2] = VersionRobot;
+			strWrite[3] = ID_MOTORS;
+			strWrite[4] = checkSum();
+			break;
 		case 't':
 		case 'T':
 			strWrite[0] = ID_ORDER;
@@ -179,7 +189,7 @@ int encode(char *request)
 			{
 				//strcpy(request,"TP 36 32");
 				sscanf(request,"%s %d %d",tmpchar, &val1, &val2);
-				printf("demande de manual (d= %d : d= %d)\n",val1, val2);
+				printf("demande de manual (d= %d : g= %d)\n",val1, val2);
 				vals1 = (short)val1;vals2=(short)val2;
 				strWrite[3] = 'M'; //polar
 				strWrite[4] = (char) ((int)vals1 & 0x00FF);
@@ -228,6 +238,7 @@ int decode(char *trame,int t)
 			curPos.spdFor = (signed short)(trame[9])+((int)(trame[10]) << 8);
 			curPos.spdRot = (signed short)(trame[11])+((int)(trame[12]) << 8);
 			printf("la position est %d %d %d\n",curPos.posX, curPos.posY, curPos.posAlpha);
+			printf("la vitesse est %d mm/s %d°/s\n",curPos.spdFor, curPos.spdRot);
 			break; 
 		case ID_ASSERV :
 			if (t < 13) // on n'a pas toute la trame
@@ -266,6 +277,26 @@ int decode(char *trame,int t)
 			curAct.state1 = trame[3];
 			curAct.state2 = trame[4];
 			//printf("count : %d score = %d\n",curRob.count,curRob.score);
+			break;
+		case ID_MOTORS :
+			if (t < 5) // on n'a pas toute la trame
+				return -1;
+			// on va vérifier la version du robot, la longueur...
+			//puis les data
+			curMot.spdLeft = (signed short)(trame[3])+((int)(trame[4]) << 8);
+			curMot.spdRight = (signed short)(trame[5])+((int)(trame[6]) << 8);
+			curMot.powerLeft = trame[7];
+			curMot.powerRight = trame[8];
+			printf("vitesses moteurs : D %d G %d\n",curMot.spdRight, curMot.spdLeft);
+			break;
+		case ID_SENSORS :
+			if (t < 3) // on n'a pas toute la trame
+				return -1;
+			// on va vérifier la version du robot, la longueur...
+			//puis les data
+			curSen.angleLeft = (signed short)(trame[3])+((int)(trame[4]) << 8);
+			curSen.angleRight = (signed short)(trame[5])+((int)(trame[6]) << 8);
+			printf("codeurs : D %d G %d\n",curSen.angleRight, curSen.angleLeft);
 			break;
 		case ID_ACK:
 			printf("Ack reçu\n");

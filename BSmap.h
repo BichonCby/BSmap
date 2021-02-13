@@ -17,6 +17,7 @@
 #define ID_IA 0x15
 #define ID_SENSORS 0x16
 #define ID_MOTORS 0x17
+#define ID_EMUL 0x18
 
 // les réponses de la trame Ack
 #define ACK_OK 0
@@ -51,11 +52,24 @@ struct s_Action{
 	char state1;
 	char state2;
 };
+struct s_Motors{
+	short spdRight;
+	short spdLeft;
+	uint8_t powerRight;
+	uint8_t powerLeft;
+};
+
+struct s_Sensors{
+	int16_t angleRight;
+	int16_t angleLeft;
+};
 
 struct s_Position curPos;
 struct s_Asserv curAss;
 struct s_Robot curRob;
 struct s_Action curAct;
+struct s_Motors curMot;
+struct s_Sensors curSen;
 
 int encode(char *request);
 int decode(char *trame,int t);

@@ -88,8 +88,10 @@ int main(int argv, char **argc)
 int encode(char *request)
 {
 	char tmpchar[3];
-	int val1, val2;
+	int val1, val2,j;
 	short vals1, vals2;
+	
+	memset(strWrite,0,100);
 	printf("Encodage de : %s\n",request);
 	switch (request[0]) // reçu depuis l'interface
 	{
@@ -103,11 +105,14 @@ int encode(char *request)
 			printf("R : demande trame Robot\n"); 
 			printf("A : demande trame Actionneur\n");
 			printf("S : demande trame Sensors\n");
-			printf("M : demande de trame motors\n");
+			printf("M : demande trame motors\n");
 			printf("TP valx valy : cible avant\n");
 			printf("TI valx valy : cible arrière\n");
 			printf("TR angle : cible en rotation\n");
 			printf("TM vitDroite vitGauche : mode manuel en vitesse\n");
+			printf("CG calib : renvoie la valeur de la calibration\n");
+			printf("CS calib valeur : impose la valeur à la calibration\n");
+			printf("CW : écriture de la config dans le fichier \n");
 			printf("H : help\n");
 			break;
 		case 'p':
@@ -166,7 +171,7 @@ int encode(char *request)
 			break;
 		case 't':
 		case 'T':
-			strWrite[0] = ID_ORDER;
+			strWrite[0] = ID_ORDERMOVE;
 			strWrite[2] = VersionRobot;
 			if (request[1] == 'P' || request[1] == 'p') // polar
 			{
@@ -185,7 +190,7 @@ int encode(char *request)
 				strWrite[1] = 7;
 				sizeWrite = 11;
 			}
-			if (request[1] == 'M' || request[1] == 'm') // manual speed
+			else if (request[1] == 'M' || request[1] == 'm') // manual speed
 			{
 				//strcpy(request,"TP 36 32");
 				sscanf(request,"%s %d %d",tmpchar, &val1, &val2);
@@ -200,7 +205,7 @@ int encode(char *request)
 				strWrite[1] = 5;
 				sizeWrite = 9;
 			}
-			if (request[1] == 'R' || request[1] == 'r') // rotation
+			else if (request[1] == 'R' || request[1] == 'r') // rotation
 			{
 				//strcpy(request,"TP 36 32");
 				sscanf(request,"%s %d",tmpchar, &val1);
@@ -213,6 +218,36 @@ int encode(char *request)
 				strWrite[1] = 3;
 				sizeWrite = 7;
 			}
+			else if (request[1] == 'S' || request[1] == 's') // stop
+			{
+				//strcpy(request,"TP 36 32");
+				printf("demande d'arrêt \n");
+				strWrite[3] = 'S'; //polar
+				strWrite[4] = checkSum();
+				strWrite[1] = 1;
+				sizeWrite = 5;
+			}
+			else
+			{
+				printf("Demande de déplacement inconnue. Tapez H pour l'aide\n");
+				return -1;
+			}
+			break;
+		case 'c':
+		case 'C': // demande de calibration
+			//strcpy(calname,request);
+			strWrite[0] = ID_PARAM;
+			strWrite[1] = strlen(request);
+			strWrite[2] = VersionRobot;
+			for (j=0;j<strlen(request);j++)
+				strWrite[j+3] = toupper(request[j]);
+			strWrite[j+4] = checkSum();
+			sizeWrite = strWrite[1]+4;
+			
+			for (j=0;j<max(0,(int)(strlen(request)))-3;j++)
+				calname[j]=toupper(request[j+3]);
+			calname[j+1]='\0';
+			//printf("1");
 			break;
 		// les autres sont à faire
 	}
@@ -220,6 +255,7 @@ int encode(char *request)
 }
 int decode(char *trame,int t)
 {
+	char calstr[20];
 	printf("début du décodage de ");
 	for (int j=0;j<sizeRead;j++)
 		printf("%x ",trame[j]);
@@ -264,10 +300,10 @@ int decode(char *trame,int t)
 			//puis les data
 			curRob.state = trame[3];
 			curRob.color = trame[4];
-			curRob.count = trame[5];
-			curRob.type = trame[6];
-			curRob.score = (uint8_t) (trame[7]);
-			printf("count : %d score = %d\n",curRob.count,curRob.score);
+			curRob.count = (int)(trame[5])+((int)(trame[6]) << 8); // en top 20ms
+			curRob.type = trame[7];
+			curRob.score = (uint8_t) (trame[8]);
+			printf("count %.2f :score = %d\n",(float)(curRob.count)/50.0,curRob.score);
 			break;
 		case ID_ACTION :
 			if (t < 5) // on n'a pas toute la trame
@@ -298,8 +334,16 @@ int decode(char *trame,int t)
 			curSen.angleRight = (signed short)(trame[5])+((int)(trame[6]) << 8);
 			printf("codeurs : D %d G %d\n",curSen.angleRight, curSen.angleLeft);
 			break;
+		case ID_CALGET :
+			for (int i=0;i<strlen(trame)-5;i++)
+				calstr[i]=trame[i+3];
+			printf("%s = %s\n",calname,calstr);
+			break;
 		case ID_ACK:
 			printf("Ack reçu\n");
+			break;
+		case ID_NACK:
+			printf("NACK %d\n",trame[4]);
 			break;
 		default :
 			printf("trame inconnue %d\n",trame[0]);

@@ -2,12 +2,14 @@ CC=g++
 EXEC = BSmap
 SRC=$(wildcard *.cpp)
 OBJ=$(SRC:.cpp=.o)
-LDFLAGS = -lpthread
+PTHREAD = -lpthread
+GTKLIB = 'pkg-config --libs gtk+-3.0'
+LDFLAGS = $(PTHREAD) $(GTKLIB)
 
 all: $(EXEC)
 
 BSmap: $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $^ 
+	$(CC) $(PTHREAD) -o $@ $^ 
 	
 %.o : %.cpp
 	$(CC) -c $^

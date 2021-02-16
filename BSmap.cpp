@@ -10,17 +10,19 @@ using namespace std;
 #include <sys/types.h>
 #include "BSmap.h"
 
+bool blabla = false;
+//const char *list_command = "PVMRS";
+//const char *list_command = "";//PVMRS";
 
+pthread_t inp;
+const char * fiforead = "/tmp/RobBSmap"; // du robot vers l'outil
+const char * fifowrite = "/tmp/BSmapRob"; // de l'outil vers le robot
+int fd;
 
 int main(int argv, char **argc)
 {
 	
-	int fd,i;
-	char input;
-	char commande[50];
-	string s1;
-	const char * fiforead = "/tmp/RobBSmap"; // du robot vers l'outil
-	const char * fifowrite = "/tmp/BSmapRob"; // de l'outil vers le robot
+	//char commande[50];
 	// création des fifo, au cas où elles n'existeraient pas
 	if (mkfifo(fiforead,0777) != 0 || mkfifo(fifowrite,0777) != 0)
 	{
@@ -28,54 +30,71 @@ int main(int argv, char **argc)
 		//return;
 	}
 	printf("pipe OK\n");
+	
+	pthread_create(&inp,NULL,&inputCommand,NULL);
+
 	// pour l'instant on est en ligne de commande. On demande donc
 	// une trame ou on donne un ordre par l'entrée strandard
-	i=0;
 	while(1)
 	{
-		do 
+		if (log)
 		{
-			getline(std::cin, s1); // pour récupérer même les espaces
-			memcpy(commande,s1.c_str(),s1.size());
-			commande[s1.size()] = '\0';
-			//printf("on a reçu %s de la taille %d\n",commande, s1.size());
+			sendReceive((char *)"P");//position
+			sendReceive((char *)"M");//motors
+			//sendReceive((char *)"R");//robot
+			sendReceive((char *)"V");//asserv
+			//sendReceive((char *)"S");//sensors
+			sleeps(0.1);//on patiente
 		}
-		// encodage de la ligne reçue
-		while(encode(commande)!=0);
-		// puis écriture dans le pipe
-		fd=open(fifowrite,O_WRONLY);
-		if (fd != -1)
+		if (!inputReady) // on a écrit un truc
 		{
-			write(fd,strWrite, sizeWrite);
+			sendReceive(strInput);
+			inputReady = true; // on autorise à nouveau l'input
 		}
-		else
-			printf("pipe HS\n");
-		close (fd);
-		//printf("Ecriture faite\n");
-		
-		//on va lire la réponse dans l'autre pipe
-		fd=open(fiforead,O_RDONLY);
-		if (fd != -1) // la lecture s'est bien passée
-		{
-			printf("Reçu par le lecteur :\n");
-			// traitement
-			sizeRead=0;
-			while(read(fd,&input,1)>0)
-			{
-				strRead[sizeRead++]=input;
-				//printf("%c",input);
-			}
-			decode(strRead,sizeRead);
-			printf("La lecture se termine!\n");
-		}
-		else
-			printf("pipe HS\n"); // oups!
-		close (fd);
-		usleep(500000);
 	}
 	return 0;
 
 }
+int sendReceive(char *commande)
+{
+	char input;
+	// encodage de la ligne reçue
+	if (encode(commande)!=0)
+		return -1;
+	// puis écriture dans le pipe
+	fd=open(fifowrite,O_WRONLY);
+	if (fd != -1)
+	{
+		write(fd,strWrite, sizeWrite);
+	}
+	else
+		printf("pipe HS\n");
+	close (fd);
+	//printf("Ecriture faite\n");
+	
+	//on va lire la réponse dans l'autre pipe
+	fd=open(fiforead,O_RDONLY);
+	if (fd != -1) // la lecture s'est bien passée
+	{
+		//printf("Reçu par le lecteur :\n");
+		// traitement
+		sizeRead=0;
+		while(read(fd,&input,1)>0)
+		{
+			strRead[sizeRead++]=input;
+			//printf("%c",input);
+		}
+		decode(strRead,sizeRead);
+		//printf("La lecture se termine!\n");
+	}
+	else
+		printf("pipe HS\n"); // oups!
+	close (fd);
+	//usleep(500000);
+	//sleeps(0.1);
+		
+}
+
 // types de commande, pour l'instant
 // p ou P : demande de trame position
 // r ou R : demande de trame robot
@@ -91,8 +110,12 @@ int encode(char *request)
 	int val1, val2,j;
 	short vals1, vals2;
 	
+	if (strlen(request)==0)
+		return -2;
 	memset(strWrite,0,100);
+	if (blabla){
 	printf("Encodage de : %s\n",request);
+	}
 	switch (request[0]) // reçu depuis l'interface
 	{
 		default :
@@ -113,6 +136,7 @@ int encode(char *request)
 			printf("CG calib : renvoie la valeur de la calibration\n");
 			printf("CS calib valeur : impose la valeur à la calibration\n");
 			printf("CW : écriture de la config dans le fichier \n");
+			printf("L : lancement / arrêt du log\n");
 			printf("H : help\n");
 			break;
 		case 'p':
@@ -256,10 +280,12 @@ int encode(char *request)
 int decode(char *trame,int t)
 {
 	char calstr[20];
+	if (blabla){
 	printf("début du décodage de ");
 	for (int j=0;j<sizeRead;j++)
 		printf("%x ",trame[j]);
 	printf("\n");
+	}
 	switch (trame[0]) //l'identifiant
 	{
 		case ID_POSITION :
@@ -273,8 +299,10 @@ int decode(char *trame,int t)
 			curPos.posAlpha = (signed short)(trame[7])+((int)(trame[8]) << 8);
 			curPos.spdFor = (signed short)(trame[9])+((int)(trame[10]) << 8);
 			curPos.spdRot = (signed short)(trame[11])+((int)(trame[12]) << 8);
+			if (blabla){
 			printf("la position est %d %d %d\n",curPos.posX, curPos.posY, curPos.posAlpha);
 			printf("la vitesse est %d mm/s %d°/s\n",curPos.spdFor, curPos.spdRot);
+			}
 			break; 
 		case ID_ASSERV :
 			if (t < 13) // on n'a pas toute la trame
@@ -289,9 +317,11 @@ int decode(char *trame,int t)
 			curAss.spdRot = (signed short)(trame[12])+((int)(trame[13]) << 8);
 			curAss.conv = trame[14];
 			curAss.block = trame[15];
+			if (blabla){
 			printf("type : %d converge = %d\n",curAss.type,curAss.conv);
 			printf("la cible est %d %d %d\n",curAss.tarX, curAss.tarY, curAss.tarAlpha);
 			printf("les vitesses for %d et rot %d\n",curAss.spdFor, curAss.spdRot);
+			}
 			break;
 		case ID_ROBOT :
 			if (t < 8) // on n'a pas toute la trame
@@ -303,7 +333,9 @@ int decode(char *trame,int t)
 			curRob.count = (int)(trame[5])+((int)(trame[6]) << 8); // en top 20ms
 			curRob.type = trame[7];
 			curRob.score = (uint8_t) (trame[8]);
+			if (blabla){
 			printf("count %.2f :score = %d\n",(float)(curRob.count)/50.0,curRob.score);
+			}
 			break;
 		case ID_ACTION :
 			if (t < 5) // on n'a pas toute la trame
@@ -323,7 +355,9 @@ int decode(char *trame,int t)
 			curMot.spdRight = (signed short)(trame[5])+((int)(trame[6]) << 8);
 			curMot.powerLeft = trame[7];
 			curMot.powerRight = trame[8];
+			if (blabla){
 			printf("vitesses moteurs : D %d G %d\n",curMot.spdRight, curMot.spdLeft);
+			}
 			break;
 		case ID_SENSORS :
 			if (t < 3) // on n'a pas toute la trame
@@ -332,7 +366,9 @@ int decode(char *trame,int t)
 			//puis les data
 			curSen.angleLeft = (signed short)(trame[3])+((int)(trame[4]) << 8);
 			curSen.angleRight = (signed short)(trame[5])+((int)(trame[6]) << 8);
+			if (blabla){
 			printf("codeurs : D %d G %d\n",curSen.angleRight, curSen.angleLeft);
+			}
 			break;
 		case ID_CALGET :
 			for (int i=0;i<strlen(trame)-5;i++)
@@ -361,3 +397,26 @@ char checkSum()
 	return (char)cs;
 }
 
+/***** threads  ******/
+void *inputCommand( void*)
+{
+	string s1;
+	// thread qui va lire l'entrée standard 
+	while(1)
+	{
+		if (inputReady)
+		{
+			getline(std::cin, s1); // pour récupérer même les espaces
+			memcpy(strInput,s1.c_str(),s1.size());
+			strInput[s1.size()] = '\0';
+			if (strInput[0]=='l' || strInput[0] == 'L') // demande de log on/off
+				log = !log;
+			else
+				inputReady = false; // on va attendre que la commande soit envoyée
+				
+		}
+		sleeps(0.5);
+	}
+
+   // return;
+}

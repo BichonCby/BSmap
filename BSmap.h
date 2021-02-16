@@ -1,5 +1,6 @@
-#ifndef __Remote_h__
-#define __Remote_h__
+#ifndef __BSmap_h__
+#define __BSmap_h__
+#define sleeps(t) usleep(t*1000000)
 
 #define STREMOTE_WAITINI 1
 #define STREMOTE_WAIT_RECEIVE 2
@@ -85,12 +86,17 @@ struct s_Sensors curSen;
 
 int encode(char *request);
 int decode(char *trame,int t);
+void *inputCommand( void*);
+int sendReceive(char *commande);
 char checkSum();
 char strWrite[100];
 char strRead[50];
 int sizeWrite;
 int sizeRead;
-
+bool log = false;
 char VersionRobot=17; // 0x01 = 2021 + 0x10=  principal
 char calname[20];
+char strInput[50];
+bool inputReady = true;
+
 #endif

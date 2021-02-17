@@ -8,6 +8,7 @@ using namespace std;
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <wiringPi.h>
 #include "BSmap.h"
 
 bool blabla = false;
@@ -40,10 +41,10 @@ int main(int argv, char **argc)
 		if (log)
 		{
 			sendReceive((char *)"P");//position
-			sendReceive((char *)"M");//motors
+			//sendReceive((char *)"M");//motors
 			//sendReceive((char *)"R");//robot
-			sendReceive((char *)"V");//asserv
-			//sendReceive((char *)"S");//sensors
+			//sendReceive((char *)"V");//asserv
+			sendReceive((char *)"S");//sensors
 			sleeps(0.1);//on patiente
 		}
 		if (!inputReady) // on a écrit un truc
@@ -137,6 +138,7 @@ int encode(char *request)
 			printf("CS calib valeur : impose la valeur à la calibration\n");
 			printf("CW : écriture de la config dans le fichier \n");
 			printf("L : lancement / arrêt du log\n");
+			printf("O : activation / désactivation détection obstacle\n");
 			printf("H : help\n");
 			break;
 		case 'p':
@@ -192,6 +194,14 @@ int encode(char *request)
 			strWrite[2] = VersionRobot;
 			strWrite[3] = ID_MOTORS;
 			strWrite[4] = checkSum();
+			break;
+		case 'o':
+		case 'O': // obstacle
+			sizeWrite = 4;
+			strWrite[0] = ID_OBSTACLE;
+			strWrite[1] = 0;
+			strWrite[2] = VersionRobot;
+			strWrite[3] = checkSum();
 			break;
 		case 't':
 		case 'T':

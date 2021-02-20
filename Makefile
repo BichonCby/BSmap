@@ -3,16 +3,17 @@ EXEC = BSmap
 SRC=$(wildcard *.cpp)
 OBJ=$(SRC:.cpp=.o)
 PTHREAD = -lpthread
-GTKLIB = 'pkg-config --libs gtk+-3.0'
+GTKCC = `pkg-config --cflags gtk+-3.0` -DGDK_VERSION_MIN_REQUIRED=GDK_VERSION_3_0
+GTKLIB = `pkg-config --cflags gtk+-3.0` -DGDK_VERSION_MIN_REQUIRED=GDK_VERSION_3_0 `pkg-config --libs gtk+-3.0`
 LDFLAGS = $(PTHREAD) $(GTKLIB)
 
 all: $(EXEC)
 
 BSmap: $(OBJ)
-	$(CC) $(PTHREAD) -o $@ $^ 
+	$(CC) $(LDFLAGS) -o $@ $^ 
 	
 %.o : %.cpp
-	$(CC) -c $^
+	$(CC) $(GTKCC) -c $^
 	
 clean :
 	rm *.o

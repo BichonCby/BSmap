@@ -1,5 +1,21 @@
 #ifndef __BSmap_h__
 #define __BSmap_h__
+//#define GTK_USE
+
+#include <iostream>
+using namespace std;
+#include <pthread.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+//#include <math.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <wiringPi.h>
+#ifdef GTK_USE
+#include <gtk/gtk.h>
+#endif
 #define sleeps(t) usleep(t*1000000)
 
 #define STREMOTE_WAITINI 1
@@ -88,6 +104,8 @@ struct s_Sensors curSen;
 int encode(char *request);
 int decode(char *trame,int t);
 void *inputCommand( void*);
+void *manageMessages( void*);
+
 int sendReceive(char *commande);
 char checkSum();
 char strWrite[100];
@@ -99,5 +117,43 @@ char VersionRobot=17; // 0x01 = 2021 + 0x10=  principal
 char calname[20];
 char strInput[50];
 bool inputReady = true;
+
+pthread_t inp;
+pthread_t mess;
+
+// interface graphique
+#define NB_TRAMES 5
+#define NB_LABELS 10
+
+#define HMI_BUTTON_POSITION 0
+#define HMI_BUTTON_ASSERV 1
+#define HMI_BUTTON_MOTORS 2
+#define HMI_BUTTON_ROBOT 3
+#define HMI_BUTTON_ACTION 4
+
+#define HMI_LABEL_POS_X 0
+#define HMI_LABEL_POS_Y 1
+#define HMI_LABEL_POS_ALPHA 2
+#define HMI_LABEL_SCORE 3
+#define HMI_LABEL_STATE 4
+#define HMI_LABEL_COLOR 5
+#define HMI_LABEL_TIMER 6
+#define HMI_LABEL_TAR_X 7
+#define HMI_LABEL_TAR_Y 8
+#define HMI_LABEL_TAR_ALPHA 9
+#define HMI_LABEL_TAR_TYPE 10
+
+char text[20];
+
+int createHMI(void);
+bool pollTrame[NB_TRAMES];
+#ifdef GTK_USE
+void change(GtkWidget *pb,gpointer data);
+GtkWidget *pWindow;
+GtkWidget *pLabel[NB_LABELS];
+GtkWidget *pTable;
+GtkWidget *pButton[NB_TRAMES];
+GdkRGBA c_red,c_blue,c_green;
+#endif
 
 #endif

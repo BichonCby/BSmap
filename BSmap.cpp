@@ -1,7 +1,16 @@
 
+#define GTK_USE
+
+#ifdef GTK_USE
+#include <cairo.h>
+#include <gtk/gtk.h> // on le met là sinon il faut compiler le .h (???)
+#include <glib.h>
+#include <glib/gstdio.h>
+#endif
+
 #include "BSmap.h"
 
-bool blabla = false;
+bool blabla = true;
 //const char *list_command = "PVMRS";
 //const char *list_command = "";//PVMRS";
 
@@ -292,12 +301,12 @@ int decode(char *trame,int t)
 			curPos.spdFor = (signed short)(trame[9])+((int)(trame[10]) << 8);
 			curPos.spdRot = (signed short)(trame[11])+((int)(trame[12]) << 8);
 #ifdef GTK_USE
-			sprintf(text,"x = %d",curPos.posX);
-			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_X]),(const gchar *)text);
-			sprintf(text,"y = %d",curPos.posY);
-			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_Y]),(const gchar *)text);
-			sprintf(text,"a = %d",curPos.posAlpha);
-			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_ALPHA]),(const gchar *)text);
+			sprintf(text,"POSITION\nx = %4d\ny = %4d\na = %4d",curPos.posX,curPos.posY,curPos.posAlpha);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_POS]),(const gchar *)text);
+			//sprintf(text,"y = %d",curPos.posY);
+			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_Y]),(const gchar *)text);
+			//sprintf(text,"a = %d",curPos.posAlpha);
+			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_ALPHA]),(const gchar *)text);
 #endif
 			if (blabla){
 			printf("la position est %d %d %d\n",curPos.posX, curPos.posY, curPos.posAlpha);
@@ -317,6 +326,16 @@ int decode(char *trame,int t)
 			curAss.spdRot = (signed short)(trame[12])+((int)(trame[13]) << 8);
 			curAss.conv = trame[14];
 			curAss.block = trame[15];
+#ifdef GTK_USE
+			//sprintf(text,"tarX = %d",curAss.tarX);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_ASS_TAR]),getTextAssTar());
+			//sprintf(text,"tarY = %d",curAss.tarY);
+			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_TAR_Y]),(const gchar *)text);
+			//sprintf(text,"tarA = %d",curAss.tarAlpha);
+			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_TAR_ALPHA]),(const gchar *)text);
+			//sprintf(text,"type = %d",curAss.type);
+			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_TAR_TYPE]),(const gchar *)text);
+#endif
 			if (blabla){
 			printf("type : %d converge = %d\n",curAss.type,curAss.conv);
 			printf("la cible est %d %d %d\n",curAss.tarX, curAss.tarY, curAss.tarAlpha);
@@ -365,6 +384,10 @@ int decode(char *trame,int t)
 			curMot.spdRight = (signed short)(trame[5])+((int)(trame[6]) << 8);
 			curMot.powerLeft = trame[7];
 			curMot.powerRight = trame[8];
+#ifdef GTK_USE
+			sprintf(text,"  MOTORS  \nLeft = %3d\nRight = %3d\n",curMot.spdLeft,curMot.spdRight);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_MOT_MOT]),(const gchar *)text);
+#endif
 			if (blabla){
 			printf("vitesses moteurs : D %d G %d\n",curMot.spdRight, curMot.spdLeft);
 			}
@@ -376,14 +399,24 @@ int decode(char *trame,int t)
 			//puis les data
 			curSen.angleLeft = (signed short)(trame[3])+((int)(trame[4]) << 8);
 			curSen.angleRight = (signed short)(trame[5])+((int)(trame[6]) << 8);
+			curSen.sonFrLeft = (unsigned char)trame[7];
+			curSen.sonFrRight = (unsigned char)trame[8];
+			curSen.sonReLeft = (unsigned char)trame[9];
+			curSen.sonReRight = (unsigned char)trame[10];
+			
 			if (blabla){
 			printf("codeurs : D %d G %d\n",curSen.angleRight, curSen.angleLeft);
+			printf("sonars %d %d %d %d\n",curSen.sonFrLeft, curSen.sonFrRight,curSen.sonReLeft, curSen.sonReRight);
 			}
 			break;
 		case ID_CALGET :
+			memset(calstr,0,20);
 			for (int i=0;i<(int)strlen(trame)-5;i++)
 				calstr[i]=trame[i+3];
 			printf("%s = %s\n",calname,calstr);
+#ifdef GTK_USE
+			gtk_entry_set_text(GTK_ENTRY(pEntryCal),(const gchar *)calstr);
+#endif
 			break;
 		case ID_ACK:
 			printf("Ack reçu\n");
@@ -471,62 +504,98 @@ int createHMI(void)
 	c_blue.alpha =1;c_blue.red = 0;c_blue.green = 0;c_blue.blue=1;
 	c_green.alpha =1;c_green.red = 0;c_green.green = 1;c_green.blue=0;
 
+	builder = gtk_builder_new();
+	gtk_builder_add_from_file(builder,"BSmapHMI.glade",NULL);
+	window = GTK_WIDGET(gtk_builder_get_object(builder,"window_main"));
+	gtk_builder_connect_signals(builder,NULL);
+	
+	g_object_unref(builder);
 
 	// la fenêtre principale
 	//GtkWidget *pQuitBtn;
 	//gchar *TexteConverti;
 	
-	
+	/*
 	// paramètres de la fenêtre
 	pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title(GTK_WINDOW(pWindow),"Nom de la fenêtre");
-	gtk_window_set_default_size(GTK_WINDOW(pWindow),500,700);
+	gtk_window_set_title(GTK_WINDOW(pWindow),"BSmap by Brickstory");
+	gtk_window_set_default_size(GTK_WINDOW(pWindow),700,700);
 	g_signal_connect(G_OBJECT(pWindow),"delete-event",G_CALLBACK(gtk_main_quit),NULL);
 	// table
 	pTable=gtk_table_new(18,10,FALSE); //homogène
+	//gtk_widget_
 	gtk_container_add(GTK_CONTAINER(pWindow),GTK_WIDGET(pTable));
 	
-	pButton[HMI_BUTTON_POSITION]=gtk_button_new_with_label("P");
-	pButton[HMI_BUTTON_ASSERV]=gtk_button_new_with_label("V"); 
-	pButton[HMI_BUTTON_ROBOT]=gtk_button_new_with_label("R");
-	pButton[HMI_BUTTON_MOTORS]=gtk_button_new_with_label("M");
+	pButton[HMI_BUTTON_POSITION]=gtk_button_new_with_label("Pos");
+	pButton[HMI_BUTTON_ASSERV]=gtk_button_new_with_label("Ass"); 
+	pButton[HMI_BUTTON_ROBOT]=gtk_button_new_with_label("Rob");
+	pButton[HMI_BUTTON_MOTORS]=gtk_button_new_with_label("Mot");
 	for (int j=0;j<4;j++)
 		gtk_widget_override_color(GTK_WIDGET(pButton[j]),GTK_STATE_FLAG_NORMAL, &c_blue);
 	// label
-	pLabel[HMI_LABEL_POS_X]=gtk_label_new("x= ");
-	pLabel[HMI_LABEL_POS_Y]=gtk_label_new("y= ");
-	pLabel[HMI_LABEL_POS_ALPHA]=gtk_label_new("a= ");
+	pLabel[HMI_LABEL_POS_POS]=gtk_label_new("POSITION\nx = \ny = \na = ");
+	//pLabel[HMI_LABEL_POS_Y]=gtk_label_new("y= ");
+	//pLabel[HMI_LABEL_POS_ALPHA]=gtk_label_new("a= ");
+	pLabel[HMI_LABEL_ASS_TAR]=gtk_label_new(" TARGET  \nx = \ny = \na = \n");
+	pLabel[HMI_LABEL_MOT_MOT]=gtk_label_new(" MOTORS  \nLeft = \nRight = \n");
+	//pLabel[HMI_LABEL_TAR_ALPHA]=gtk_label_new("tar a= ");
 	pLabel[HMI_LABEL_SCORE]=gtk_label_new("Score ");
 	pLabel[HMI_LABEL_STATE]=gtk_label_new("State ");
 	pLabel[HMI_LABEL_COLOR]=gtk_label_new("Color");
 	pLabel[HMI_LABEL_TIMER]=gtk_label_new("t = ");
+	//pLabel[HMI_LABEL_TAR_TYPE]=gtk_label_new("type =");
 	
-	gtk_table_attach_defaults(GTK_TABLE(pTable),pButton[HMI_BUTTON_POSITION],13,14,1,2);
-	gtk_table_attach_defaults(GTK_TABLE(pTable),pButton[HMI_BUTTON_ASSERV],14,15,1,2);
-	gtk_table_attach_defaults(GTK_TABLE(pTable),pButton[HMI_BUTTON_ROBOT],15,16,1,2);
-	gtk_table_attach_defaults(GTK_TABLE(pTable),pButton[HMI_BUTTON_MOTORS],16,17,1,2);
+	pEntry = gtk_entry_new(); // pour rentrer une commande directe
+	
+	pComboCal = gtk_combo_box_text_new();
+	for (int i=0;i<NB_CAL;i++)
+		gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(pComboCal),NULL,listCal[i]);
+	pEntryCal = gtk_entry_new(); // l'input de la valeur de calib
+	
+	pDraw = gtk_drawing_area_new();
+	gtk_widget_set_size_request(pDraw,300,210);
+	// attachement des widgets dans la table
+	gtk_table_attach(GTK_TABLE(pTable),pButton[HMI_BUTTON_POSITION],13,14,1,2,GTK_EXPAND,GTK_EXPAND,0,0);
+	gtk_table_attach(GTK_TABLE(pTable),pButton[HMI_BUTTON_ASSERV],14,15,1,2,GTK_EXPAND,GTK_EXPAND,0,0);
+	gtk_table_attach(GTK_TABLE(pTable),pButton[HMI_BUTTON_ROBOT],15,16,1,2,GTK_EXPAND,GTK_EXPAND,0,0);
+	gtk_table_attach(GTK_TABLE(pTable),pButton[HMI_BUTTON_MOTORS],16,17,1,2,GTK_EXPAND,GTK_EXPAND,0,0);
 
 	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_SCORE],0,2,1,2);
 	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_STATE],3,5,1,2);
 	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_COLOR],6,8,1,2);
 	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_TIMER],9,11,1,2);
 
-	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_POS_X],13,15,2,3);
-	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_POS_Y],13,15,3,4);
-	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_POS_ALPHA],13,15,4,5);
+	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_POS_POS],13,15,2,3);
+	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_MOT_MOT],13,15,3,4);
 
+	gtk_table_attach(GTK_TABLE(pTable),pComboCal,13,15,4,5,GTK_EXPAND,GTK_EXPAND,0,0);
+	gtk_table_attach(GTK_TABLE(pTable),pEntryCal,15,16,4,5,GTK_EXPAND,GTK_EXPAND,0,0);
+
+	gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_ASS_TAR],16,18,2,3);
+	//gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_TAR_Y],16,18,3,4);
+	//gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_TAR_ALPHA],16,18,4,5);
+	//gtk_table_attach_defaults(GTK_TABLE(pTable),pLabel[HMI_LABEL_TAR_TYPE],16,18,5,6);
+
+	gtk_table_attach(GTK_TABLE(pTable),pEntry,0,3,10,11,GTK_EXPAND,GTK_EXPAND,0,0);
+	gtk_table_attach_defaults(GTK_TABLE(pTable),pDraw,0,10,5,10);
 //	gtk_widget_override_background_color(GTK_WIDGET(pLabel),GTK_STATE_FLAG_NORMAL, &c_blue);
 //	gtk_widget_override_color(GTK_WIDGET(pLabel),GTK_STATE_FLAG_NORMAL, &c_red);
 	for (int i=0;i<4;i++){
 		g_signal_connect(G_OBJECT(pButton[i]),"clicked",G_CALLBACK(change),NULL);}
-	
+	g_signal_connect(G_OBJECT(pEntry),"activate",G_CALLBACK(getEntry),NULL);
+	g_signal_connect(G_OBJECT(pComboCal),"changed",G_CALLBACK(getCalValue),NULL);
+	g_signal_connect(G_OBJECT(pEntryCal),"activate",G_CALLBACK(setCalValue),NULL);
+//	g_signal_connect(G_OBJECT(pDraw),"expose_event",G_CALLBACK(redraw),NULL);
+	g_signal_connect(G_OBJECT(pDraw),"realize",G_CALLBACK(redraw2),NULL);
+	//redraw2(pDraw,NULL);*/
 /*	//gtk_container_add(GTK_CONTAINER(pWindow),pLabel);
 
 	pQuitBtn = gtk_button_new_with_label("Quitter");
 	g_signal_connect(G_OBJECT(pQuitBtn),"clicked",G_CALLBACK(gtk_main_quit),NULL);
 	gtk_container_add(GTK_CONTAINER(pWindow),pQuitBtn);
 */
-	gtk_widget_show_all(pWindow);
+	//gtk_widget_show_all(pWindow);
+	gtk_widget_show(window);
 #endif
 	return 0;
 }
@@ -538,16 +607,96 @@ void change(GtkWidget *pb,gpointer data)
 	{
 		if (pb == pButton[i])
 		{
-			if (pollTrame[i] = ! pollTrame[i])
-				gtk_widget_override_color(GTK_WIDGET(pButton[i]),GTK_STATE_FLAG_NORMAL, &c_red);
-			else
-				gtk_widget_override_color(GTK_WIDGET(pButton[i]),GTK_STATE_FLAG_NORMAL, &c_blue);
-			// rajouter le changement de couleur du bouton
+			//printf("chg %d\n",i);
+			pollTrame[i] = ! pollTrame[i];
 		}
+	}// on découpe en deux sinon ça marche pas... je sais pas pourquoi
+	for (int i=0;i<NB_TRAMES;i++)
+	{
+		if (pollTrame[i])
+			gtk_widget_override_color(GTK_WIDGET(pButton[i]),GTK_STATE_FLAG_NORMAL, &c_red);
+		else
+			gtk_widget_override_color(GTK_WIDGET(pButton[i]),GTK_STATE_FLAG_NORMAL, &c_blue);
+			// rajouter le changement de couleur du bouton
 	}
 //		gtk_label_set_text(GTK_LABEL((GtkWidget *)data),(const gchar *)("salut"));
 //	if (pb == pButton[1])
 //		gtk_label_set_text(GTK_LABEL((GtkWidget *)data),(const gchar *)("coucou"));
 
 }
+void getEntry(GtkEntry *entry, gpointer data)
+{
+	char *txt;//[50];// = NULL;//(char *)malloc(50);
+	//memset(txt,0,50);
+	memset(strInput,0,50);
+	txt = (char *)gtk_entry_get_text(GTK_ENTRY(entry));
+	//memcpy(strInput,(char *)gtk_entry_get_text(GTK_ENTRY(entry)),strlen((char *)gtk_entry_get_text(GTK_ENTRY(entry))));
+	memcpy(strInput,txt,strlen(txt));
+	printf("string envoyée %s\n",txt);
+	inputReady = false;
+//	free(txt);
+}
+void setCalValue(GtkEntry *entry, gpointer data)
+{
+	//char *txt;//[50];// = NULL;//(char *)malloc(50);
+	//memset(txt,0,50);
+	sprintf(strInput,"CS %s %s",
+		gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(pComboCal)),
+		gtk_entry_get_text(GTK_ENTRY(entry)));
+//	memset(strInput,0,50);
+	//txt = (char *)gtk_entry_get_text(GTK_ENTRY(entry));
+	//memcpy(strInput,(char *)gtk_entry_get_text(GTK_ENTRY(entry)),strlen((char *)gtk_entry_get_text(GTK_ENTRY(entry))));
+	//memcpy(strInput,txt,strlen(txt));
+	//printf("string envoyée %s\n",txt);
+	inputReady = false;
+//	free(txt);
+}
+
+
+void getCalValue(GtkEntry *comb, gpointer data)
+{
+	//printf("%s\n",gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(comb)));
+	sprintf(strInput,"CG %s",gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(comb)));
+	inputReady = false; // pour lancer l'envoi
+}
+
+gboolean redraw2(GtkWidget *widget,gpointer userdata)
+{
+	cairo_t *cr=NULL;
+	cr=gdk_cairo_create(gtk_widget_get_window(widget));
+	cairo_set_source_rgb(cr,.1,.0,.0);
+	cairo_set_line_width(cr,2.0);
+	cairo_move_to(cr,10.,10.);
+	cairo_line_to(cr,100.,100.);
+	cairo_stroke(cr);
+	cairo_destroy(cr);
+	return false;
+}
+
+const gchar *getTextAssTar()
+{
+	//char txt[50];
+	sprintf(text," TARGET  \nx = %4d\ny = %4d\na = %4d\n",curAss.tarX,curAss.tarY, curAss.tarAlpha);
+	switch(curAss.type)
+	{
+		case ASS_NUL :
+		default :
+			strcat(text,"   NUL");break;
+		case ASS_POLAR :
+			strcat(text,"  POL AV");break;
+		case ASS_POLARREV :
+			strcat(text,"  POL_AR");break;
+		case ASS_ROTATION :
+			strcat(text," ROTATION");break;
+		case ASS_MANUAL :
+			strcat(text,"ASS_MANUAL");break;
+	}
+	return (const gchar *)text;
+}
+
+void on_wondow_main_destroy()
+{
+	gtk_main_quit();
+}
+
 #endif

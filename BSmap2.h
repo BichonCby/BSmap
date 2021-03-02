@@ -65,11 +65,11 @@
 #define ASS_BLOCK 10
 
 #define HMI_BUTTON_POSITION 0
-#define HMI_BUTTON_ASSERV 1
-#define HMI_BUTTON_MOTORS 2
-#define HMI_BUTTON_ROBOT 3
-#define HMI_BUTTON_ACTION 4
-#define HMI_BUTTON_SENSOR 5
+#define HMI_BUTTON_MOTORS 1
+#define HMI_BUTTON_ROBOT 2
+#define HMI_BUTTON_ASSERV 3
+#define HMI_BUTTON_SENSOR 4
+#define HMI_BUTTON_ACTION 5
 
 struct s_Position{
 	short posX;
@@ -126,6 +126,7 @@ int encode(char *request);
 int decode(char *trame,int t);
 void *inputCommand( void*);
 void *manageMessages( void* d);
+char *TypeNumToChar(int typ);
 
 int sendReceive(char *commande);
 char checkSum();
@@ -144,18 +145,29 @@ pthread_t mess;
 
 char text[50];
 
-int createHMI(void);
 char pollTrame[5]={0,0,0,0,0};
-void change(GtkWidget *pb,gpointer data);
-const gchar *getTextAssTar();
 void getEntry(GtkEntry *entry, gpointer data);
 void getCalValue(GtkEntry *comb, gpointer data);
-//void setCalValue(GtkEntry *entry, gpointer data);
-//gboolean redraw2(GtkWidget *widget,gpointer userdata);
-//void on_window_main_destroy();
+
 GtkWidget *PosButton;
 GtkWidget *pComboCal;
 GtkWidget *pEntryCal;
+GtkWidget * pLabelPosPos;
+GtkWidget * pLabelPosSpd;
+GtkWidget *pDraw;
+GtkWidget *pLabelConv;
+GtkWidget *pLabelBlock;
+GtkWidget *pLabelDetect;
+GtkWidget *pLabelAssTar;
+GtkWidget *pLabelAssType;
+GtkWidget *pLabelMotSpd;
+GtkWidget *pLabelMotPow;
+GtkWidget *pLabelSenEnc;
+GtkWidget *pLabelSenSonar;
+
+GdkRGBA c_red ={1,0,0,0.5};
+GdkRGBA c_gray ={0.5,0.5,0.5,0.5};
+//,c_blue,c_green;
 
 const char * fiforead = "/tmp/RobBSmap"; // du robot vers l'outil
 const char * fifowrite = "/tmp/BSmapRob"; // de l'outil vers le robot

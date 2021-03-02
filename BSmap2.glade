@@ -31,7 +31,91 @@
               </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkOverlay">
+                <property name="width_request">200</property>
+                <property name="height_request">200</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkImage">
+                    <property name="width_request">200</property>
+                    <property name="height_request">200</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="opacity">0.5</property>
+                    <property name="halign">start</property>
+                    <property name="valign">start</property>
+                    <property name="hexpand">False</property>
+                    <property name="vexpand">False</property>
+                    <property name="pixbuf">terrain.png</property>
+                  </object>
+                  <packing>
+                    <property name="index">-1</property>
+                  </packing>
+                </child>
+                <child type="overlay">
+                  <object class="GtkDrawingArea" id="pDraw">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="tooltip_text" translatable="yes">le terrain</property>
+                    <signal name="draw" handler="on_pDraw_draw" swapped="no"/>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="border_width">1</property>
+                <property name="spacing">11</property>
+                <child>
+                  <object class="GtkLabel" id="pLabelConv">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">converg</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="pLabelBlock">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">blocage</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="pLabelDetect">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">detect</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
             </child>
             <child>
               <object class="GtkEntry">
@@ -42,7 +126,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="position">2</property>
+                <property name="position">3</property>
               </packing>
             </child>
           </object>
@@ -156,18 +240,81 @@
               </packing>
             </child>
             <child>
-              <placeholder/>
-            </child>
-            <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkBox">
+                    <property name="width_request">80</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Calibrations</property>
+                    <property name="halign">start</property>
+                    <property name="valign">start</property>
+                    <property name="border_width">1</property>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">5</property>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Position</property>
+                        <property name="justify">center</property>
+                        <attributes>
+                          <attribute name="background" value="#72729f9fcfcf"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="pLabelPosPos">
+                        <property name="height_request">50</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">x = 
+y = 
+a =</property>
+                        <attributes>
+                          <attribute name="font-desc" value="DejaVu Math TeX Gyre 10"/>
+                          <attribute name="background" value="#ffffffffffff"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="pLabelPosSpd">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">spd F =
+sdp R = </property>
+                        <attributes>
+                          <attribute name="font-desc" value="DejaVu Math TeX Gyre 10"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -177,20 +324,21 @@
                 </child>
                 <child>
                   <object class="GtkBox">
+                    <property name="width_request">80</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="valign">start</property>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">5</property>
                     <child>
-                      <object class="GtkComboBoxText" id="pComboCal">
+                      <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="active">0</property>
-                        <items>
-                          <item id="&lt;Saisir un identifiant&gt;" translatable="yes">COEFF_SPD_FOR</item>
-                          <item translatable="yes">COEFF_SPD_ROT</item>
-                          <item translatable="yes">COEFF_ANG</item>
-                          <item translatable="yes">COEFF_MM</item>
-                        </items>
-                        <signal name="changed" handler="on_pComboCal_changed" swapped="no"/>
+                        <property name="label" translatable="yes"> Target </property>
+                        <attributes>
+                          <attribute name="background" value="#72729f9fcfcf"/>
+                        </attributes>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -199,10 +347,82 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="pEntryCal">
+                      <object class="GtkLabel" id="pLabelAssTar">
+                        <property name="height_request">50</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <signal name="activate" handler="setCalValue" swapped="no"/>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">x :
+y :
+a :</property>
+                        <attributes>
+                          <attribute name="font-desc" value="DejaVu Math TeX Gyre 10"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="pLabelAssType">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">type</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox">
+                    <property name="width_request">80</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Moteurs</property>
+                        <attributes>
+                          <attribute name="background" value="#72729f9fcfcf"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">speed</property>
+                        <attributes>
+                          <attribute name="underline" value="True"/>
+                        </attributes>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -211,11 +431,14 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">Write</property>
+                      <object class="GtkLabel" id="pLabelMotSpd">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">L : 
+R :</property>
+                        <attributes>
+                          <attribute name="font-desc" value="DejaVu Math TeX Gyre 10"/>
+                        </attributes>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -223,6 +446,189 @@
                         <property name="position">2</property>
                       </packing>
                     </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">power</property>
+                        <attributes>
+                          <attribute name="underline" value="True"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="pLabelMotPow">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">L :
+R :</property>
+                        <attributes>
+                          <attribute name="font-desc" value="DejaVu Math TeX Gyre 10"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">5</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox">
+                    <property name="width_request">80</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Sensors</property>
+                        <attributes>
+                          <attribute name="background" value="#72729f9fcfcf"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Encoder</property>
+                        <attributes>
+                          <attribute name="underline" value="True"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="pLabelSenEncoder">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">L :
+R :</property>
+                        <attributes>
+                          <attribute name="font-desc" value="DejaVu Math TeX Gyre 10"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Sonar</property>
+                        <attributes>
+                          <attribute name="underline" value="True"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="pLabelSenSonar">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">FL :
+FR :
+RL :
+RR :</property>
+                        <attributes>
+                          <attribute name="font-desc" value="DejaVu Math TeX Gyre 10"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">5</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkSeparator">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Calibrations</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -235,6 +641,61 @@
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkComboBoxText" id="pComboCal">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="active">0</property>
+                    <items>
+                      <item id="&lt;Saisir un identifiant&gt;" translatable="yes">COEFF_SPD_FOR</item>
+                      <item translatable="yes">COEFF_SPD_ROT</item>
+                      <item translatable="yes">COEFF_ANG</item>
+                      <item translatable="yes">COEFF_MM</item>
+                    </items>
+                    <signal name="changed" handler="on_pComboCal_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="pEntryCal">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <signal name="activate" handler="setCalValue" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">Write</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
               </packing>
             </child>
           </object>

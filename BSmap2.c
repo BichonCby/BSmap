@@ -25,7 +25,21 @@ int main(int argc,char *argv[])
 	// connection des widgets, on peut en faire une structure pour mettre tout ça dans le .h
 	pComboCal = GTK_WIDGET(gtk_builder_get_object(builder,"pComboCal"));
 	pEntryCal = GTK_WIDGET(gtk_builder_get_object(builder,"pEntryCal"));
-	
+	pLabelPosPos = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelPosPos"));
+	pLabelPosSpd = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelPosSpd"));
+	pDraw = GTK_WIDGET(gtk_builder_get_object(builder,"pDraw"));
+	pLabelConv = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelConv"));
+	pLabelBlock = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelBlock"));
+	pLabelDetect = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelDetect"));
+	pLabelAssTar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelAssTar"));
+	pLabelAssType = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelAssType"));
+	pLabelMotSpd = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelMotSpd"));
+	pLabelMotPow = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelMotPow"));
+	pLabelSenEnc = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelSenEnc"));
+	pLabelSenSonar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelSenSonar"));
+	//pLabelAssTar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelAssTar"));
+	//pLabelAssTar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelAssTar"));
+	//pLabelAssTar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelAssTar"));
 	g_object_unref(builder); 
 	gtk_widget_show(window);
 	gtk_main(); 
@@ -279,14 +293,14 @@ int decode(char *trame,int t)
 			curPos.posAlpha = (signed short)(trame[7])+((int)(trame[8]) << 8);
 			curPos.spdFor = (signed short)(trame[9])+((int)(trame[10]) << 8);
 			curPos.spdRot = (signed short)(trame[11])+((int)(trame[12]) << 8);
-#ifdef GTK_USE
-//			sprintf(text,"POSITION\nx = %4d\ny = %4d\na = %4d",curPos.posX,curPos.posY,curPos.posAlpha);
-//			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_POS]),(const gchar *)text);
-			//sprintf(text,"y = %d",curPos.posY);
-			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_Y]),(const gchar *)text);
-			//sprintf(text,"a = %d",curPos.posAlpha);
-			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_POS_ALPHA]),(const gchar *)text);
-#endif
+
+			sprintf(text,"x = %4d\ny = %4d\na = %4d",curPos.posX,curPos.posY,curPos.posAlpha);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelPosPos),(const gchar *)text);
+
+			sprintf(text,"spd F = %4d\nspd R = %4d",curPos.spdFor,curPos.spdRot);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelPosSpd),(const gchar *)text);
+
+			gtk_widget_queue_draw(pDraw);
 			if (blabla){
 			printf("la position est %d %d %d\n",curPos.posX, curPos.posY, curPos.posAlpha);
 			printf("la vitesse est %d mm/s %d°/s\n",curPos.spdFor, curPos.spdRot);
@@ -305,16 +319,19 @@ int decode(char *trame,int t)
 			curAss.spdRot = (signed short)(trame[12])+((int)(trame[13]) << 8);
 			curAss.conv = trame[14];
 			curAss.block = trame[15];
-#ifdef GTK_USE
-			//sprintf(text,"tarX = %d",curAss.tarX);
-//			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_ASS_TAR]),getTextAssTar());
-			//sprintf(text,"tarY = %d",curAss.tarY);
-			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_TAR_Y]),(const gchar *)text);
-			//sprintf(text,"tarA = %d",curAss.tarAlpha);
-			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_TAR_ALPHA]),(const gchar *)text);
-			//sprintf(text,"type = %d",curAss.type);
-			//gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_TAR_TYPE]),(const gchar *)text);
-#endif
+			if (curAss.conv==0)
+				gtk_widget_override_background_color(GTK_WIDGET(pLabelConv),GTK_STATE_FLAG_NORMAL, &c_gray);
+			else
+				gtk_widget_override_background_color(GTK_WIDGET(pLabelConv),GTK_STATE_FLAG_NORMAL, &c_red);
+			
+			if (curAss.block==0)
+				gtk_widget_override_background_color(GTK_WIDGET(pLabelBlock),GTK_STATE_FLAG_NORMAL, &c_gray);
+			else
+				gtk_widget_override_background_color(GTK_WIDGET(pLabelBlock),GTK_STATE_FLAG_NORMAL, &c_red);
+			sprintf(text,"x : %d\ny : %d\na : %d",curAss.tarX,curAss.tarY,curAss.tarAlpha);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelAssTar),(const gchar *)text);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelAssType),(const gchar *)TypeNumToChar(curAss.type));
+
 			if (blabla){
 			printf("type : %d converge = %d\n",curAss.type,curAss.conv);
 			printf("la cible est %d %d %d\n",curAss.tarX, curAss.tarY, curAss.tarAlpha);
@@ -392,7 +409,6 @@ int decode(char *trame,int t)
 			memset(calstr,0,20);
 			for (int i=0;i<(int)strlen(trame)-5;i++)
 				calstr[i]=trame[i+3];
-//			printf("%s = %s\n",calname,calstr);
 			gtk_entry_set_text(GTK_ENTRY(pEntryCal),(const gchar *)calstr);
 			break;
 		case ID_ACK:
@@ -412,13 +428,6 @@ int decode(char *trame,int t)
 
 void *manageMessages( void *d)
 {
-#ifndef GTK_USE
-//	pollTrame[HMI_BUTTON_POSITION]=1;
-//	pollTrame[HMI_BUTTON_MOTORS]=1;
-//	pollTrame[HMI_BUTTON_ROBOT]=1;
-	//pollTrame[HMI_BUTTON_ASSERV]=1;
-	//pollTrame[HMI_BUTTON_POSITION]=1;
-#endif
 	while(1)
 	{
 		if (pollTrame[0])
@@ -429,7 +438,8 @@ void *manageMessages( void *d)
 			sendReceive((char *)"R");//robot
 		if (pollTrame[3])
 			sendReceive((char *)"V");//asserv
-			//sendReceive((char *)"S");//sensors
+		if (pollTrame[4])
+			sendReceive((char *)"S");//sensors
 			sleeps(0.5);//on patiente
 		//printf("inputready = %d\n",inputReady);
 		if (inputReady == 0) // on a écrit un truc
@@ -473,6 +483,30 @@ char checkSum()
 	for (int i=0;i<strWrite[1]+3;i++)
 		cs+=(int)strWrite[i];
 	return (char)cs;
+}
+
+char *TypeNumToChar(int typ)
+{
+	switch (typ)
+	{
+		case ASS_NUL :
+		default :
+			return "NUL";
+		case ASS_POLAR :
+			return "POL";
+		case ASS_POLARREV :
+			return "REV";
+		case ASS_ROTATION :
+			return "ROT";
+		case ASS_MANUAL :
+			return "MAN";
+		case ASS_PIVOT :
+			return "PIV";
+		case ASS_CIRCLE :
+			return "CIR";
+		case ASS_BLOCK :
+			return "BLK";
+	}
 }
 
 void getEntry(GtkEntry *entry, gpointer data)
@@ -531,4 +565,27 @@ void on_pComboCal_changed(GtkWidget *combo)
 	sprintf(strInput,"CG %s",gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo)));
 	inputReady = 0; // pour lancer l'envoi
 //	printf("cahnge %s\n",gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo)));
+}
+
+void on_pDraw_draw(GtkWidget *widget,cairo_t *cr,gpointer data)
+{
+	guint width, height;
+	GdkRGBA color;
+	GtkStyleContext *context;
+	context = gtk_widget_get_style_context(widget);
+	
+	width = gtk_widget_get_allocated_width(widget);
+	height = gtk_widget_get_allocated_height(widget);
+	
+	gtk_render_background (context,cr,0,0,width,height);
+	
+	cairo_arc (cr, width/3000.0*curPos.posX, height - height/2100.0*curPos.posY, 5,0,2*G_PI);
+	
+	gtk_style_context_get_color(context,
+								gtk_style_context_get_state(context),
+								&color);
+	gdk_cairo_set_source_rgba(cr,&color);
+	
+	cairo_fill(cr);
+
 }

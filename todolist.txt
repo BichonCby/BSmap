@@ -1,0 +1,18 @@
+A coder 
+
+log
+Passer les unités de rotation en 0.1°/s pour les transferts pipe??
+//interface graphique avec dessin du terrain
+bouton pour lancer le match, ou le relancer
+//faire bouton pour écrire la calib
+passer en CSS pour les couleurs des labels
+intégrer la trame robot dans l'interface
+Dessiner un robot orienté et pas un point
+Emuler les boutons (tirette, BAU, couleur)
+faire une checkbox pour lancer le polling de toutes les trames
+gérer les inputs de la fenêtre de commande
+
+
+options de compil :
+gcc -Wall -c "%f" -lpthread -lwiringPi `pkg-config --cflags --libs gtk+-3.0`
+gcc -Wall -o "%e" "%f" -lpthread -lwiringPi `pkg-config --cflags --libs gtk+-3.0` -export-dynamic

@@ -1,19 +1,31 @@
-CC=g++
-EXEC = BSmap
-SRC=$(wildcard *.cpp)
-OBJ=$(SRC:.cpp=.o)
+TARGET = BSmap2
+
+#compiler
+CC=gcc
+# debug
+DEBUG=-g
+#optimisation
+OPT=-O0
+# warnings
+WARN=-Wall
+
 PTHREAD = -lpthread
-GTKCC = `pkg-config --cflags gtk+-3.0` -DGDK_VERSION_MIN_REQUIRED=GDK_VERSION_3_0
+
+CCFLAGS=$(DEBUG) $(OPT) $(WARN) $(PTHREAD) -pipe
+
 GTKLIB = `pkg-config --cflags gtk+-3.0` -DGDK_VERSION_MIN_REQUIRED=GDK_VERSION_3_0 `pkg-config --libs gtk+-3.0` -export-dynamic
-LDFLAGS = $(PTHREAD) $(GTKLIB)
 
-all: $(EXEC)
+# linker
+LD=gcc
+LDFLAGS = $(PTHREAD) $(GTKLIB) -export-dynamic
 
-BSmap: $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $^ 
-	
-%.o : %.cpp
-	$(CC) $(GTKCC) -c $^
-	
+OBJS= BSmap2.o
+
+all: $(OBJS)
+	$(LD) -o $(TARGET) $(OBJS) $(LDFLAGS)
+
+BSmap2.o: BSmap2.c
+	$(CC) -c $(CCFLAGS) BSmap2.c $(GTKLIB) -o BSmap2.o
+
 clean :
-	rm *.o
+	rm *.o $(TARGET)

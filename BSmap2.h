@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-//#include <math.h>
+#include <math.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -122,6 +122,17 @@ struct s_Action curAct;
 struct s_Motors curMot;
 struct s_Sensors curSen;
 
+struct s_Point{
+	float d; // la distance au centre du robot
+	float a0; // l'angle radian si alpha nul
+	float x; // le x à tracer
+	float y; // le y à tracer
+};
+#define LF 100 // longueur entre l'avant et le centre du robot
+#define LR 100 // longueur entre l'arrière et le centre du robot
+#define LL 100 // longueur entre le côté et le centre du robot (symétrique)
+
+struct s_Point ptRobot[6];//les points de traçage du robot
 int encode(char *request);
 int decode(char *trame,int t);
 void *inputCommand( void*);
@@ -130,6 +141,7 @@ char *TypeNumToChar(int typ);
 
 int sendReceive(char *commande);
 char checkSum();
+void initRobotPoints();
 char strWrite[100];
 char strRead[50];
 int sizeWrite;
@@ -167,10 +179,11 @@ GtkWidget *pLabelSenSonar;
 
 GdkRGBA c_red ={1,0,0,0.5};
 GdkRGBA c_gray ={0.5,0.5,0.5,0.5};
+GdkRGBA c_black ={0,0,0,1};
 //,c_blue,c_green;
 
 const char * fiforead = "/tmp/RobBSmap"; // du robot vers l'outil
 const char * fifowrite = "/tmp/BSmapRob"; // de l'outil vers le robot
 int fd;
 
-char blabla = 1;
+char blabla = 0;

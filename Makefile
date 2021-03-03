@@ -10,14 +10,15 @@ OPT=-O0
 WARN=-Wall
 
 PTHREAD = -lpthread
-
+MATH=-lm
+ 
 CCFLAGS=$(DEBUG) $(OPT) $(WARN) $(PTHREAD) -pipe
 
 GTKLIB = `pkg-config --cflags gtk+-3.0` -DGDK_VERSION_MIN_REQUIRED=GDK_VERSION_3_0 `pkg-config --libs gtk+-3.0` -export-dynamic
 
 # linker
 LD=gcc
-LDFLAGS = $(PTHREAD) $(GTKLIB) -export-dynamic
+LDFLAGS = $(PTHREAD) $(MATH) $(GTKLIB) -export-dynamic
 
 OBJS= BSmap2.o
 

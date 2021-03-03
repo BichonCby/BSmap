@@ -656,14 +656,6 @@ RR :</property>
                       <item translatable="yes">COEFF_SPD_ROT</item>
                       <item translatable="yes">COEFF_ANG</item>
                       <item translatable="yes">COEFF_MM</item>
-                      <item translatable="yes">DIST_CONVERGE</item>
-                      <item translatable="yes">ANGLE_CONVERGE</item>
-                      <item translatable="yes">KP_FOR</item>
-                      <item translatable="yes">KP_ROT</item>
-                      <item translatable="yes">SCORE_INIT</item>
-                      <item translatable="yes">INIT_POS_X</item>
-                      <item translatable="yes">INIT_POS_Y</item>
-                      <item translatable="yes">INIT_POS_A</item>
                     </items>
                     <signal name="changed" handler="on_pComboCal_changed" swapped="no"/>
                   </object>

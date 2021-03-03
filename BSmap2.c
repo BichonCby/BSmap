@@ -13,6 +13,7 @@ int main(int argc,char *argv[])
 	}
 	printf("pipe OK\n");
 
+	initRobotPoints();
 	pthread_create(&mess,NULL,&manageMessages,NULL);
 	pthread_create(&inp,NULL,&inputCommand,NULL);
 
@@ -207,6 +208,23 @@ int encode(char *request)
 				strWrite[1] = 7;
 				sizeWrite = 11;
 			}
+			else if (request[1] == 'I' || request[1] == 'i') // polar inverse
+			{
+				//strcpy(request,"TP 36 32");
+				sscanf(request,"%s %d %d",tmpchar, &val1, &val2);
+				printf("demande de polar vers (%d : %d)\n",val1, val2);
+				vals1 = (short)val1;vals2=(short)val2;
+				strWrite[3] = 'I'; //polar
+				strWrite[4] = (char) ((int)vals1 & 0x00FF);
+				strWrite[5] = (char) (((int)vals1)>>8 & 0x00FF);
+				strWrite[6] = (char) ((int)vals2 & 0x00FF);
+				strWrite[7] = (char) (((int)vals2)>>8 & 0x00FF);
+				strWrite[8] = 0; //angle
+				strWrite[9] = 0; //angle
+				strWrite[10] = checkSum();
+				strWrite[1] = 7;
+				sizeWrite = 11;
+			}
 			else if (request[1] == 'M' || request[1] == 'm') // manual speed
 			{
 				//strcpy(request,"TP 36 32");
@@ -297,7 +315,7 @@ int decode(char *trame,int t)
 			sprintf(text,"x = %4d\ny = %4d\na = %4d",curPos.posX,curPos.posY,curPos.posAlpha);
 			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelPosPos),(const gchar *)text);
 
-			sprintf(text,"spd F = %4d\nspd R = %4d",curPos.spdFor,curPos.spdRot);
+			sprintf(text,"v av: %4d\nv rot: %4d",curPos.spdFor,curPos.spdRot);
 			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelPosSpd),(const gchar *)text);
 
 			gtk_widget_queue_draw(pDraw);
@@ -380,10 +398,8 @@ int decode(char *trame,int t)
 			curMot.spdRight = (signed short)(trame[5])+((int)(trame[6]) << 8);
 			curMot.powerLeft = trame[7];
 			curMot.powerRight = trame[8];
-#ifdef GTK_USE
-//			sprintf(text,"  MOTORS  \nLeft = %3d\nRight = %3d\n",curMot.spdLeft,curMot.spdRight);
-//			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_MOT_MOT]),(const gchar *)text);
-#endif
+			sprintf(text,"L:%3d\nR:%3d\n",curMot.spdLeft,curMot.spdRight);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelMotSpd),(const gchar *)text);
 			if (blabla){
 			printf("vitesses moteurs : D %d G %d\n",curMot.spdRight, curMot.spdLeft);
 			}
@@ -399,6 +415,8 @@ int decode(char *trame,int t)
 			curSen.sonFrRight = (unsigned char)trame[8];
 			curSen.sonReLeft = (unsigned char)trame[9];
 			curSen.sonReRight = (unsigned char)trame[10];
+			sprintf(text,"FL :%d\nFR :%d\nRL :%d\nRR :%d\n",curSen.sonFrLeft,curSen.sonFrRight,curSen.sonReLeft,curSen.sonReRight);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelSenSonar),(const gchar *)text);
 			
 			if (blabla){
 			printf("codeurs : D %d G %d\n",curSen.angleRight, curSen.angleLeft);
@@ -485,6 +503,21 @@ char checkSum()
 	return (char)cs;
 }
 
+void initRobotPoints()
+{
+	ptRobot[0].d = sqrt(LL*LL+LF*LF);
+	ptRobot[0].a0 = atan(LL/LF);
+	ptRobot[1].d = sqrt(LL*LL+LR*LR);
+	ptRobot[1].a0 = atan(-LL/LR)+G_PI;
+	ptRobot[2].d = sqrt(LL*LL+LR*LR);
+	ptRobot[2].a0 = atan(LL/LR)-G_PI;
+	ptRobot[3].d = sqrt(LL*LL+LF*LF);
+	ptRobot[3].a0 = atan(-LL/LF);
+	ptRobot[4].d = 0;
+	ptRobot[4].a0 = 0;
+	ptRobot[5].d = sqrt(LL*LL+LF*LF);
+	ptRobot[5].a0 = atan(LL/LF);
+}
 char *TypeNumToChar(int typ)
 {
 	switch (typ)
@@ -560,11 +593,17 @@ void on_Button_toggled(GtkToggleButton *togg)
 		pollTrame[index] = 0;
 }
 
+void on_write_activate(GtkWidget *but)
+{
+	sprintf(strInput,"CW");
+	inputReady = 0; // pour lancer l'envoi
+	return;
+}
+
 void on_pComboCal_changed(GtkWidget *combo)
 {
 	sprintf(strInput,"CG %s",gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo)));
 	inputReady = 0; // pour lancer l'envoi
-//	printf("cahnge %s\n",gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo)));
 }
 
 void on_pDraw_draw(GtkWidget *widget,cairo_t *cr,gpointer data)
@@ -573,19 +612,32 @@ void on_pDraw_draw(GtkWidget *widget,cairo_t *cr,gpointer data)
 	GdkRGBA color;
 	GtkStyleContext *context;
 	context = gtk_widget_get_style_context(widget);
+	for (int i=0;i<6;i++)
+	{
+		ptRobot[i].x = curPos.posX+ptRobot[i].d*cos(ptRobot[i].a0+curPos.posAlpha*G_PI/180.0);
+		ptRobot[i].y = curPos.posY+ptRobot[i].d*sin(ptRobot[i].a0+curPos.posAlpha*G_PI/180.0);
+	}
+	float larg,haut;
 	
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
+	larg = width/3000.0;
+	haut = height/2100.0;
+	if (1)
+	{
 	
-	gtk_render_background (context,cr,0,0,width,height);
+	//gtk_render_background (context,cr,0,0,width,height);
+	//cairo_set_line_width (cr,2.0);
 	
-	cairo_arc (cr, width/3000.0*curPos.posX, height - height/2100.0*curPos.posY, 5,0,2*G_PI);
-	
+	cairo_move_to(cr,larg*ptRobot[0].x,height-haut*ptRobot[0].y);
+	for (int i=1;i<6;i++)
+		cairo_line_to(cr,larg*ptRobot[i].x,height-haut*ptRobot[i].y);
+
 	gtk_style_context_get_color(context,
 								gtk_style_context_get_state(context),
 								&color);
-	gdk_cairo_set_source_rgba(cr,&color);
+	gdk_cairo_set_source_rgba(cr,&c_black);
 	
-	cairo_fill(cr);
-
+	cairo_stroke(cr);
+	}
 }

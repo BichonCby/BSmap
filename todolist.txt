@@ -10,7 +10,7 @@ intégrer la trame robot dans l'interface
 //Dessiner un robot orienté et pas un point
 Emuler les boutons (tirette, BAU, couleur)
 faire une checkbox pour lancer le polling de toutes les trames
-gérer les inputs de la fenêtre de commande
+//gérer les inputs de la fenêtre de commande
 voir pourquoi on a des erreurs de segmentation
 
 options de compil :

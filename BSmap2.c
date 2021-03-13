@@ -38,7 +38,10 @@ int main(int argc,char *argv[])
 	pLabelMotPow = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelMotPow"));
 	pLabelSenEnc = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelSenEnc"));
 	pLabelSenSonar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelSenSonar"));
-	//pLabelAssTar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelAssTar"));
+	pLabelColor = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelColor"));
+	pLabelRob1 = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelRob1"));
+	pLabelRobState = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelRobState"));
+	pLabelIAStep = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelIAStep"));
 	//pLabelAssTar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelAssTar"));
 	//pLabelAssTar = GTK_WIDGET(gtk_builder_get_object(builder,"pLabelAssTar"));
 	g_object_unref(builder); 
@@ -159,6 +162,15 @@ int encode(char *request)
 			strWrite[1] = 1;
 			strWrite[2] = VersionRobot;
 			strWrite[3] = ID_ACTION;
+			strWrite[4] = checkSum();
+			break;
+		case 'i':
+		case 'I':
+			sizeWrite = 5;
+			strWrite[0] = ID_INFO;
+			strWrite[1] = 1;
+			strWrite[2] = VersionRobot;
+			strWrite[3] = ID_IA;
 			strWrite[4] = checkSum();
 			break;
 		case 's':
@@ -284,6 +296,18 @@ int encode(char *request)
 			calname[j+1]='\0';
 			//printf("1");
 			break;
+		case 'B':
+		case 'b':
+			strWrite[0] = ID_BUTTON;
+			strWrite[1] = 1;
+			strWrite[2] = VersionRobot;
+//			for (j=0;j<2;j++)
+			//{
+				strWrite[3] = toupper(request[1]);printf(".");
+			//}
+			strWrite[4] = checkSum();
+			sizeWrite = strWrite[1]+4;
+			break;
 		// les autres sont à faire
 	}
 	return 0;
@@ -357,7 +381,7 @@ int decode(char *trame,int t)
 			}
 			break;
 		case ID_ROBOT :
-			if (t < 8) // on n'a pas toute la trame
+			if (t < 5) // on n'a pas toute la trame
 				return -1;
 			// on va vérifier la version du robot, la longueur...
 			//puis les data
@@ -366,18 +390,16 @@ int decode(char *trame,int t)
 			curRob.count = (int)(trame[5])+((int)(trame[6]) << 8); // en top 20ms
 			curRob.type = trame[7];
 			curRob.score = (char) (trame[8]);
-#ifdef GTK_USE
-//			sprintf(text,"score %d",curRob.score);
-//			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_SCORE]),(const gchar *)text);
-//			sprintf(text,"t= %.1f",(float)curRob.count/50.0);
-//			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_TIMER]),(const gchar *)text);
-//			sprintf(text,"state %d",curRob.state);
-//			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_STATE]),(const gchar *)text);
-//			sprintf(text,"color %d",curRob.color);
-//			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabel[HMI_LABEL_COLOR]),(const gchar *)text);
-#endif
+			if (curRob.color)
+				gtk_label_set_text(GTK_LABEL(pLabelColor),"YELLOW");
+			else
+				gtk_label_set_text(GTK_LABEL(pLabelColor),"BLUE");
+			gtk_label_set_text(GTK_LABEL(pLabelRobState),StateMatchNumToChar(curRob.state));
+
+			sprintf(text,"t:%03.1fs|Score %3d",curRob.count/50.0,curRob.score);
+			gtk_label_set_text(GTK_LABEL(pLabelRob1),(const gchar *)text);
 			if (blabla){
-			printf("count %.2f :score = %d\n",(float)(curRob.count)/50.0,curRob.score);
+			printf("count %.2f :score = %d coul = %d\n",(float)(curRob.count)/50.0,curRob.score,curRob.color);
 			}
 			break;
 		case ID_ACTION :
@@ -388,6 +410,17 @@ int decode(char *trame,int t)
 			curAct.state1 = trame[3];
 			curAct.state2 = trame[4];
 			//printf("count : %d score = %d\n",curRob.count,curRob.score);
+			break;
+		case ID_IA :
+			if (t < 2) // on n'a pas toute la trame
+				return -1;
+			// on va vérifier la version du robot, la longueur...
+			//puis les data
+			curIA.macroStep = trame[3];
+			curIA.microStep = trame[4];
+			sprintf(text,"%d\n%d",curIA.macroStep,curIA.microStep);
+			gtk_label_set_text(GTK_LABEL((GtkWidget *)pLabelIAStep),(const gchar *)text);
+//			printf("micro : %d macro = %d\n",curIA.macroStep,curIA.microStep);
 			break;
 		case ID_MOTORS :
 			if (t < 5) // on n'a pas toute la trame
@@ -448,17 +481,19 @@ void *manageMessages( void *d)
 {
 	while(1)
 	{
-		if (pollTrame[0])
+		if (pollTrame[HMI_BUTTON_POSITION])
 			sendReceive((char *)"P");//position
-		if (pollTrame[1])
+		if (pollTrame[HMI_BUTTON_MOTORS])
 			sendReceive((char *)"M");//motors
-		if (pollTrame[2])
+		if (pollTrame[HMI_BUTTON_ROBOT])
 			sendReceive((char *)"R");//robot
-		if (pollTrame[3])
+		if (pollTrame[HMI_BUTTON_ASSERV])
 			sendReceive((char *)"V");//asserv
-		if (pollTrame[4])
+		if (pollTrame[HMI_BUTTON_SENSOR])
 			sendReceive((char *)"S");//sensors
-			sleeps(0.5);//on patiente
+		if (pollTrame[HMI_BUTTON_IA])
+			sendReceive((char *)"I");//IA
+			sleeps(0.2);//on patiente
 		//printf("inputready = %d\n",inputReady);
 		if (inputReady == 0) // on a écrit un truc
 		{
@@ -473,25 +508,15 @@ void *manageMessages( void *d)
 
 void *inputCommand( void*g)
 {
-	//string s1;
-	//char *s1;
-	// thread qui va lire l'entrée standard 
 	while(1)
 	{
 		if (inputReady)
 		{
-		//	getline(std::cin, s1); // pour récupérer même les espaces
-		//	memcpy(strInput,s1.c_str(),s1.size());
-		//	strInput[s1.size()] = '\0';
-		//	if (strInput[0]=='l' || strInput[0] == 'L') // demande de log on/off
-		//		logg = !logg;
-		//	else
-		//		inputReady = 0; // on va attendre que la commande soit envoyée
-				
+			fgets(strInput,50,stdin);
+			inputReady = 0; // on va attendre que la commande soit envoyée
 		}
 		sleeps(0.5);
 	}
-
     return NULL;
 }
 
@@ -541,6 +566,26 @@ char *TypeNumToChar(int typ)
 			return "BLK";
 	}
 }
+char *StateMatchNumToChar(int st)
+{
+	switch (st)
+	{
+		case MATCH_PREPARE :
+			return "PREP";
+		case MATCH_WAIT :
+			return "WAIT";
+		case MATCH_IN_PROGRESS :
+			return "RUN ";
+		case MATCH_FUNNY :
+			return "FUN ";
+		case MATCH_DISPLAY :
+			return "DISP";
+		case MATCH_END :
+			return "END ";
+		default :
+			return "----";
+	}
+}
 
 void getEntry(GtkEntry *entry, gpointer data)
 {
@@ -587,10 +632,28 @@ void on_Button_toggled(GtkToggleButton *togg)
 		index = HMI_BUTTON_ROBOT;
 	else if (strncmp(label,"Act",3)==0)
 		index = HMI_BUTTON_ACTION;
+	else if (strncmp(label,"IA ",3)==0)
+		index = HMI_BUTTON_IA;
 	if (state)
 		pollTrame[index]=1;
 	else
 		pollTrame[index] = 0;
+}
+
+// callback qui gère les appuis simples de contacteurs
+void on_button_activate(GtkWidget *butt)
+{
+	//gboolean state= gtk_toggle_button_get_active(togg);
+	char label[3];
+	//int index;
+	strncpy(label,gtk_button_get_label(GTK_BUTTON(butt)),3);
+	if (strncmp(label,"Tir",3)==0)
+		sprintf(strInput,"BT");
+	else if (strncmp(label,"BAU",3)==0)
+		sprintf(strInput,"BB");
+	else if (strncmp(label,"Col",3)==0)
+		sprintf(strInput,"BC");
+	inputReady = 0; // pour lancer l'envoi
 }
 
 void on_write_activate(GtkWidget *but)
@@ -612,10 +675,21 @@ void on_pDraw_draw(GtkWidget *widget,cairo_t *cr,gpointer data)
 	GdkRGBA color;
 	GtkStyleContext *context;
 	context = gtk_widget_get_style_context(widget);
-	for (int i=0;i<6;i++)
+	if (curRob.color == 0)
 	{
-		ptRobot[i].x = curPos.posX+ptRobot[i].d*cos(ptRobot[i].a0+curPos.posAlpha*G_PI/180.0);
-		ptRobot[i].y = curPos.posY+ptRobot[i].d*sin(ptRobot[i].a0+curPos.posAlpha*G_PI/180.0);
+		for (int i=0;i<6;i++)
+		{
+			ptRobot[i].x = curPos.posX+ptRobot[i].d*cos(ptRobot[i].a0+curPos.posAlpha*G_PI/180.0);
+			ptRobot[i].y = curPos.posY+ptRobot[i].d*sin(ptRobot[i].a0+curPos.posAlpha*G_PI/180.0);
+		}
+	}
+	else // si on est de la couleur opposée, on est de l'autre côté
+	{
+		for (int i=0;i<6;i++)
+		{
+			ptRobot[i].x = 3000-curPos.posX+ptRobot[i].d*cos(ptRobot[i].a0+(180-curPos.posAlpha)*G_PI/180.0);
+			ptRobot[i].y = curPos.posY+ptRobot[i].d*sin(ptRobot[i].a0+(180-curPos.posAlpha)*G_PI/180.0);
+		}
 	}
 	float larg,haut;
 	

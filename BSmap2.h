@@ -30,6 +30,7 @@
 #define ID_CALGET 		0x0B
 //#define ID_CALWRITE 	0x0C
 #define ID_PARAM 		0x0D
+#define ID_BUTTON		0x0E
 #define ID_POSITION 	0x10
 #define ID_ASSERV 		0x11
 #define ID_ROBOT 		0x12
@@ -64,12 +65,20 @@
 #define ASS_CIRCLE 7
 #define ASS_BLOCK 10
 
+#define MATCH_PREPARE 0
+#define MATCH_WAIT 1
+#define MATCH_IN_PROGRESS 2
+#define MATCH_FUNNY 3
+#define MATCH_DISPLAY 4
+#define MATCH_END 5
+
 #define HMI_BUTTON_POSITION 0
 #define HMI_BUTTON_MOTORS 1
 #define HMI_BUTTON_ROBOT 2
 #define HMI_BUTTON_ASSERV 3
 #define HMI_BUTTON_SENSOR 4
 #define HMI_BUTTON_ACTION 5
+#define HMI_BUTTON_IA 6
 
 struct s_Position{
 	short posX;
@@ -99,6 +108,10 @@ struct s_Action{
 	char state1;
 	char state2;
 };
+struct s_IA{
+	char microStep;
+	char macroStep;
+};
 struct s_Motors{
 	short spdRight;
 	short spdLeft;
@@ -121,6 +134,7 @@ struct s_Robot curRob;
 struct s_Action curAct;
 struct s_Motors curMot;
 struct s_Sensors curSen;
+struct s_IA curIA;
 
 struct s_Point{
 	float d; // la distance au centre du robot
@@ -138,6 +152,7 @@ int decode(char *trame,int t);
 void *inputCommand( void*);
 void *manageMessages( void* d);
 char *TypeNumToChar(int typ);
+char *StateMatchNumToChar(int st);
 
 int sendReceive(char *commande);
 char checkSum();
@@ -164,8 +179,8 @@ void getCalValue(GtkEntry *comb, gpointer data);
 GtkWidget *PosButton;
 GtkWidget *pComboCal;
 GtkWidget *pEntryCal;
-GtkWidget * pLabelPosPos;
-GtkWidget * pLabelPosSpd;
+GtkWidget *pLabelPosPos;
+GtkWidget *pLabelPosSpd;
 GtkWidget *pDraw;
 GtkWidget *pLabelConv;
 GtkWidget *pLabelBlock;
@@ -176,6 +191,10 @@ GtkWidget *pLabelMotSpd;
 GtkWidget *pLabelMotPow;
 GtkWidget *pLabelSenEnc;
 GtkWidget *pLabelSenSonar;
+GtkWidget *pLabelColor;
+GtkWidget *pLabelRob1;
+GtkWidget *pLabelRobState;
+GtkWidget *pLabelIAStep;
 
 GdkRGBA c_red ={1,0,0,0.5};
 GdkRGBA c_gray ={0.5,0.5,0.5,0.5};

@@ -26,6 +26,7 @@
 #define ID_INFO 		0x01
 #define ID_ORDERMOVE 	0x02
 #define ID_ORDERACT 	0x03
+#define ID_ORDERPOS		0x04
 //#define ID_CALSET 		0x0A
 #define ID_CALGET 		0x0B
 //#define ID_CALWRITE 	0x0C

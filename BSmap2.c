@@ -95,8 +95,8 @@ int sendReceive(char *commande)
 int encode(char *request)
 {
 	char tmpchar[3];
-	int val1, val2,j;
-	short vals1, vals2;
+	int val1, val2,val3, j;
+	short vals1, vals2, vals3;
 	
 	if (strlen(request)==0)
 		return -2;
@@ -124,7 +124,7 @@ int encode(char *request)
 			printf("CG calib : renvoie la valeur de la calibration\n");
 			printf("CS calib valeur : impose la valeur à la calibration\n");
 			printf("CW : écriture de la config dans le fichier \n");
-			printf("L : lancement / arrêt du log\n");
+			printf("L : repositionnement du robot\n");
 			printf("O : activation / désactivation détection obstacle\n");
 			printf("H : help\n");
 			break;
@@ -308,6 +308,24 @@ int encode(char *request)
 			strWrite[4] = checkSum();
 			sizeWrite = strWrite[1]+4;
 			break;
+		case 'l':
+		case 'L':
+			strWrite[0] = ID_ORDERPOS;
+			strWrite[1] = 6;
+			strWrite[2] = VersionRobot;
+			sscanf(request,"%s %d %d %d",tmpchar, &val1, &val2, &val3);
+//			printf("demande de repositionnement vers (%d : %d : %d)\n",val1, val2,val3);
+			vals1 = (short)val1;vals2=(short)val2;vals3=(short)val3;
+			strWrite[3] = (char) ((int)vals1 & 0x00FF);
+			strWrite[4] = (char) (((int)vals1)>>8 & 0x00FF);
+			strWrite[5] = (char) ((int)vals2 & 0x00FF);
+			strWrite[6] = (char) (((int)vals2)>>8 & 0x00FF);
+			strWrite[7] = (char) ((int)vals3 & 0x00FF);
+			strWrite[8] = (char) (((int)vals3)>>8 & 0x00FF);
+			strWrite[9] = checkSum();
+			sizeWrite = strWrite[1]+4;
+			break;
+
 		// les autres sont à faire
 	}
 	return 0;
